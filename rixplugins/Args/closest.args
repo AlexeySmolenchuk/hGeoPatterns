@@ -1,0 +1,48 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Closest Point on Geometry
+    </help>
+
+    <param name="filename"
+        label="Filename"
+        type="string"
+        widget="fileInput"
+        connectable="False">
+        <help>Geometry Filename</help>
+    </param>
+
+    <param name="maxdist"
+        label="Max Search Distance"
+        type="float"
+        default="10000000000">
+        <help>Search distance</help>
+    </param>
+
+    <param name="coordsys"
+        label="Coordinate System"
+        type="string"
+        default="object"
+        connectable="False"
+        widget="popup"
+        options="object|world"
+        editable="True"
+        houdiniui = "oplist">
+    </param>
+
+    <output name="ClosestData"
+        type="struct"
+        struct_name="ClosestData">
+        <tags>
+            <tag value="struct"/>
+            <tag value ="ClosestData"/>
+        </tags>
+    </output>
+
+    <output name="dist"
+        type="float">
+    </output>
+
+</args>

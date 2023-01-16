@@ -1,0 +1,44 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Read attribute values to array like structure.
+    </help>
+
+    <param name="filename"
+        label="Filename"
+        type="string"
+        widget="fileInput"
+        connectable="False">
+        <help>Geometry Filename. When empty read geometry from incoming connection</help>
+    </param>
+
+    <param name="attribute"
+        label="Attribute"
+        type="string"
+        default="P"
+        connectable="False">
+    </param>
+
+    <param name="IdxA"
+        label="Indexes"
+        type="struct"
+        struct_name="ArrayData"
+        widget="null">
+        <tags>
+            <tag value="struct"/>
+            <tag value="ArrayData"/>
+        </tags>
+    </param>
+
+    <output name="ValuesA"
+        type="struct"
+        struct_name="ArrayData">
+        <tags>
+            <tag value="struct"/>
+            <tag value ="ArrayData"/>
+        </tags>
+    </output>
+
+</args>

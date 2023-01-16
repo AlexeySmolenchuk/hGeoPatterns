@@ -1,0 +1,39 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Read attribute for specific ClosestData.
+    </help>
+
+    <param name="filename"
+        label="Filename"
+        type="string"
+        widget="fileInput"
+        connectable="False">
+        <help>Geometry Filename. When empty read geometry from incoming connection.</help>
+    </param>
+
+    <param name="attribute"
+        label="Attribute"
+        type="string"
+        default="P"
+        connectable="False">
+    </param>
+
+    <param name="ClosestData"
+        label="ClosestData"
+        type="struct"
+        struct_name="ClosestData"
+        widget="null">
+        <tags>
+            <tag value="struct"/>
+            <tag value="ClosestData"/>
+        </tags>
+    </param>
+
+    <output name="Value"
+        type="color">
+    </output>
+
+</args>

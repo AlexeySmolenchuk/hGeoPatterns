@@ -1,0 +1,82 @@
+#include "hGeoStructsOSL.h"
+
+vector build_coord_system(point pos, vector dir, normal n, point center, float scale, float angle, float randomize){
+    vector _u = normalize(dir);
+    vector _v = normalize(cross(n, dir));
+    vector coord = pos - center;
+    coord = vector(dot(coord, _u), dot(coord, _v), 0)/scale;
+
+    if (angle !=0){
+        float a = angle * M_PI;
+        coord = vector( cos(a)*coord.x - sin(a)*coord.y, sin(a)*coord.x + cos(a)*coord.y, 0);
+    }
+    coord += vector(noise("cell", center*1000)-0.5) * randomize -0.5;
+    return coord;
+}
+
+shader buildCoords (
+    ArrayData Positions = {},
+    ArrayData Normals = {},
+    ArrayData Directions = {},
+    ArrayData Distances = {},
+    float scale = 1.0,
+    float sharpness = 10.0,
+    float angle = 0.0,
+    float randomize = 1.0,
+
+    output vector coords[8] = {},
+    output vector randoms[8] = {},
+    output float weights[8] = {},
+    output color DBG = 0
+)
+{
+    point myP;
+    if (!getattribute("primvar", "__Pref", myP))
+        getattribute("primvar", "P", myP);
+
+    myP = transform("world", myP);
+
+    int n = Positions.num;
+
+             coords[0] = build_coord_system(myP, Directions.v0, Normals.v0, Positions.v0, scale, angle, randomize);
+    if (n>1) coords[1] = build_coord_system(myP, Directions.v1, Normals.v1, Positions.v1, scale, angle, randomize);
+    if (n>2) coords[2] = build_coord_system(myP, Directions.v2, Normals.v2, Positions.v2, scale, angle, randomize);
+    if (n>3) coords[3] = build_coord_system(myP, Directions.v3, Normals.v3, Positions.v3, scale, angle, randomize);
+    if (n>4) coords[4] = build_coord_system(myP, Directions.v4, Normals.v4, Positions.v4, scale, angle, randomize);
+    if (n>5) coords[5] = build_coord_system(myP, Directions.v5, Normals.v5, Positions.v5, scale, angle, randomize);
+    if (n>6) coords[6] = build_coord_system(myP, Directions.v6, Normals.v6, Positions.v6, scale, angle, randomize);
+    if (n>7) coords[7] = build_coord_system(myP, Directions.v7, Normals.v7, Positions.v7, scale, angle, randomize);
+
+             weights[0] = 1.0;
+    if (n>1) weights[1] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v1.x ) * 2, sharpness);
+    if (n>2) weights[2] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v2.x ) * 2, sharpness);
+    if (n>3) weights[3] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v3.x ) * 2, sharpness);
+    if (n>4) weights[4] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v4.x ) * 2, sharpness);
+    if (n>5) weights[5] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v5.x ) * 2, sharpness);
+    if (n>6) weights[6] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v6.x ) * 2, sharpness);
+    if (n>7) weights[7] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v7.x ) * 2, sharpness);
+
+             randoms[0] = vector(noise("cell", Positions.v0*1000));
+    if (n>1) randoms[1] = vector(noise("cell", Positions.v1*1000));
+    if (n>2) randoms[2] = vector(noise("cell", Positions.v2*1000));
+    if (n>3) randoms[3] = vector(noise("cell", Positions.v3*1000));
+    if (n>4) randoms[4] = vector(noise("cell", Positions.v4*1000));
+    if (n>5) randoms[5] = vector(noise("cell", Positions.v5*1000));
+    if (n>6) randoms[6] = vector(noise("cell", Positions.v6*1000));
+    if (n>7) randoms[7] = vector(noise("cell", Positions.v7*1000));
+
+    float overal_weight = weights[0]
+                        + weights[1]
+                        + weights[2]
+                        + weights[3]
+                        + weights[4]
+                        + weights[5]
+                        + weights[6]
+                        + weights[7];
+
+    float inv = 1.0/overal_weight;
+    for (int i = 0; i<n; i++){
+        weights[i]  *= inv;
+        DBG += randoms[i] * weights[i];
+    }
+}

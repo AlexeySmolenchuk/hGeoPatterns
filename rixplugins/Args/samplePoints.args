@@ -1,0 +1,55 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Point Cloud Search
+    </help>
+    <param name="filename"
+        label="Filename"
+        type="string"
+        widget="fileInput"
+        connectable="False">
+        <help>Geometry Filename</help>
+    </param>
+
+    <param name="numPoints"
+        label="Number of Points"
+        type="int"
+        default="4"
+        min="1"
+        max="8"
+        connectable="False">
+        <help>Number of Points to Sample (up to 8)</help>
+    </param>
+
+    <param name="coordsys"
+        label="Coordinate System"
+        type="string"
+        default="object"
+        connectable="False"
+        widget="popup"
+        options="object|world"
+        editable="True"
+        houdiniui="oplist">
+    </param>
+
+    <output name="IdxA"
+        type="struct"
+        struct_name="ArrayData">
+        <tags>
+            <tag value="struct"/>
+            <tag value ="ArrayData"/>
+        </tags>
+    </output>
+
+    <output name="DistA"
+        type="struct"
+        struct_name="ArrayData">
+        <tags>
+            <tag value="struct"/>
+            <tag value ="ArrayData"/>
+        </tags>
+    </output>
+
+</args>
