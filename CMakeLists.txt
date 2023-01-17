@@ -17,6 +17,7 @@ foreach (var ${vars})
     endif ()
 endforeach ()
 
+# Houdini and RFH can setup PYTHONPATH for us
 set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories( ${RMANTREE}/include )
@@ -31,20 +32,21 @@ add_definitions(-DSIZEOF_VOID_P=8 -D_USE_MATH_DEFINES -DSESI_LITTLE_ENDIAN)
 add_definitions(-DNDEBUG)
 add_definitions(-w)
 
-
-file (GLOB rixplugin_source "src/*.cpp")
+# gather sources
+file (GLOB rixplugin_sources "src/*.cpp")
 file (GLOB args_files "rixplugins/Args/*.args")
 file (GLOB shader_headers "osl/include/*.h")
-file (GLOB shader_source "osl/*.osl")
+file (GLOB shader_sources "osl/*.osl")
 
-foreach (_rixpluginame ${rixplugin_source})
+# compile rixplugins
+foreach (_rixpluginame ${rixplugin_sources})
     cmake_path(GET _rixpluginame STEM name)
     add_library( ${name} SHARED  ${_rixpluginame})
     set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE  ${PROJECT_SOURCE_DIR}/rixplugins)
 endforeach ()
 
-
-foreach (oslfile ${shader_source})
+# compile OSL shaders
+foreach (oslfile ${shader_sources})
     cmake_path(GET oslfile STEM name)
     set( osofile ${PROJECT_SOURCE_DIR}/shaders/${name}.oso)
     add_custom_command(
@@ -61,9 +63,9 @@ endforeach ()
 
 add_custom_target(OSL
                 DEPENDS ${shader_objs}
-                SOURCES ${shader_source} ${shader_headers})
+                SOURCES ${shader_sources} ${shader_headers})
 
-
+# create HDA
 add_custom_command(
     COMMAND  ${CMAKE_COMMAND} -E env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
         ${HFS}/bin/hython ${PROJECT_SOURCE_DIR}/python/build_hda.py
@@ -78,7 +80,7 @@ add_custom_target(HDA ALL
                 DEPENDS ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
                 SOURCES ${args_files} ${shader_objs} )
 
-
+# Convert some textures shipped with Houdini for examples 
 file (GLOB houdini_textures ${HFS}/houdini/pic/texture/brick*.rat)
 foreach (houdini_texture ${houdini_textures})
     cmake_path(GET houdini_texture STEM name)
