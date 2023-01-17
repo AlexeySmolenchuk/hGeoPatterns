@@ -20,11 +20,11 @@ endforeach ()
 # Houdini and RFH can setup PYTHONPATH for us
 set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
-include_directories( ${RMANTREE}/include )
+include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
 link_libraries(libprman.lib libpxrcore.lib libstats.lib)
 
-include_directories( ${HFS}/toolkit/include )
+include_directories(SYSTEM ${HFS}/toolkit/include )
 link_directories( ${HFS}/custom/houdini/dsolib )
 link_libraries(libGA.lib libGU.lib libGEO.lib libUT.lib libSYS.lib)
 

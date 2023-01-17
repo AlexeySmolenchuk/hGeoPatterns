@@ -1,6 +1,6 @@
 ## Lets bring Houdini proceduralism to RenderMan
 Set of RIS patterns using native HDK functionality to make operations such sampling and reading arbitrary Houdini Geometry Data in RenderMan.
-OSL examples demonstrating various usecases 
+OSL examples demonstrating various usecases.
 
 ### RIS Patterns
 
