@@ -22,11 +22,11 @@ set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
-link_libraries(libprman.lib libpxrcore.lib libstats.lib)
+link_libraries(libprman libpxrcore libstats)
 
 include_directories(SYSTEM ${HFS}/toolkit/include )
 link_directories( ${HFS}/custom/houdini/dsolib )
-link_libraries(libGA.lib libGU.lib libGEO.lib libUT.lib libSYS.lib)
+link_libraries(libGA libGU libGEO libUT libSYS)
 
 add_definitions(-DSIZEOF_VOID_P=8 -D_USE_MATH_DEFINES -DSESI_LITTLE_ENDIAN)
 add_definitions(-DNDEBUG)
