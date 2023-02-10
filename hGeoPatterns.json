@@ -1,0 +1,9 @@
+{
+    "load_package_once": true,
+    "env": [
+        { "HOUDINI_PATH": "${HOUDINI_PACKAGE_PATH}" },
+        { "RMAN_RIXPLUGINPATH": "${HOUDINI_PACKAGE_PATH}/rixplugins:${RMANTREE}/lib/plugins" },
+        { "RMAN_SHADERPATH": "${HOUDINI_PACKAGE_PATH}/shaders:${RMANTREE}/lib/shaders" },
+        { "PATH": "${RMANTREE}/bin:${PATH}" }
+    ]
+}
