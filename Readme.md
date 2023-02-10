@@ -7,7 +7,7 @@ Set of RIS patterns using native HDK functionality to make operations like sampl
 Sample closest points from file and store their sorted indexes and distances in ArrayData structure for further reading. Similar to pcopen/nearpoints vex functions.
 
 #### ReadAttribute
-Read point specified point attribute from ArrayData structure indexes.
+Read specified point attribute from ArrayData structure indexes.
 Empty filename means using the same file.
 
 #### Closest
