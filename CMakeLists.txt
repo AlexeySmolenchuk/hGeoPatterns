@@ -22,15 +22,24 @@ set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
-link_libraries(libprman libpxrcore libstats)
 
 include_directories(SYSTEM ${HFS}/toolkit/include )
-link_directories( ${HFS}/custom/houdini/dsolib )
-link_libraries(libGA libGU libGEO libUT libSYS)
+link_directories( ${HFS}/dsolib ${HFS}/custom/houdini/dsolib )
 
-add_definitions(-DSIZEOF_VOID_P=8 -D_USE_MATH_DEFINES -DSESI_LITTLE_ENDIAN)
+add_definitions(-DSIZEOF_VOID_P=8 -D_USE_MATH_DEFINES -DSESI_LITTLE_ENDIAN -DAMD64)
 add_definitions(-DNDEBUG)
-add_definitions(-w)
+
+
+if (MSVC)
+    add_compile_options(-w)
+    link_libraries(libprman libpxrcore libstats)
+    link_libraries(libGA libGU libGEO libUT libSYS)
+else()
+    add_definitions(-DLINUX -DUSE_PTHREADS)
+    add_compile_options(-W)
+    link_libraries(prman pxrcore stats)
+    link_libraries(HoudiniGEO HoudiniUT)
+endif()
 
 # gather sources
 file (GLOB rixplugin_sources "src/*.cpp")
@@ -40,14 +49,22 @@ file (GLOB shader_sources "osl/*.osl")
 
 # compile rixplugins
 foreach (_rixpluginame ${rixplugin_sources})
-    cmake_path(GET _rixpluginame STEM name)
-    add_library( ${name} SHARED  ${_rixpluginame})
-    set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE  ${PROJECT_SOURCE_DIR}/rixplugins)
+    # cmake_path(GET _rixpluginame STEM name)
+    get_filename_component ( name ${_rixpluginame} NAME_WLE )
+    add_library( ${name} SHARED ${_rixpluginame})
+    if (MSVC)
+        set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/rixplugins PREFIX "")
+    else()
+        set_target_properties(${name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/rixplugins PREFIX "")
+    endif()
 endforeach ()
 
+
 # compile OSL shaders
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/shaders)
 foreach (oslfile ${shader_sources})
-    cmake_path(GET oslfile STEM name)
+    # cmake_path(GET oslfile STEM name)
+    get_filename_component ( name ${oslfile} NAME_WLE )
     set( osofile ${PROJECT_SOURCE_DIR}/shaders/${name}.oso)
     add_custom_command(
         COMMAND ${RMANTREE}/bin/oslc
@@ -65,10 +82,18 @@ add_custom_target(OSL
                 DEPENDS ${shader_objs}
                 SOURCES ${shader_sources} ${shader_headers})
 
+
 # create HDA
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/otls)
 add_custom_command(
-    COMMAND  ${CMAKE_COMMAND} -E env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
-        ${HFS}/bin/hython ${PROJECT_SOURCE_DIR}/python/build_hda.py
+    COMMAND  ${CMAKE_COMMAND} -E
+        if (MSVC)
+            env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
+            ${HFS}/bin/hython ${PROJECT_SOURCE_DIR}/python/build_hda.py
+        else()
+            env PATH="${HFS}/bin:$ENV{PATH}"
+            hython ${PROJECT_SOURCE_DIR}/python/build_hda.py
+        endif()
         ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
         ${PROJECT_SOURCE_DIR}/rixplugins
         ${PROJECT_SOURCE_DIR}/shaders
@@ -80,10 +105,13 @@ add_custom_target(HDA ALL
                 DEPENDS ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
                 SOURCES ${args_files} ${shader_objs} )
 
-# Convert some textures shipped with Houdini for examples 
+
+# Convert some textures shipped with Houdini for examples
 file (GLOB houdini_textures ${HFS}/houdini/pic/texture/brick*.rat)
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/textures)
 foreach (houdini_texture ${houdini_textures})
-    cmake_path(GET houdini_texture STEM name)
+    # cmake_path(GET houdini_texture STEM name)
+    get_filename_component ( name ${houdini_texture} NAME_WLE )
     set( texture ${PROJECT_SOURCE_DIR}/textures/${name}.tex)
     add_custom_command(
         COMMAND
