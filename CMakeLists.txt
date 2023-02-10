@@ -17,7 +17,7 @@ foreach (var ${vars})
     endif ()
 endforeach ()
 
-# Houdini and RFH can setup PYTHONPATH for us
+# Houdini and RFH can setup PYTHONPATH for us (Windows only)
 set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories(SYSTEM ${RMANTREE}/include )
@@ -49,7 +49,6 @@ file (GLOB shader_sources "osl/*.osl")
 
 # compile rixplugins
 foreach (_rixpluginame ${rixplugin_sources})
-    # cmake_path(GET _rixpluginame STEM name)
     get_filename_component ( name ${_rixpluginame} NAME_WLE )
     add_library( ${name} SHARED ${_rixpluginame})
     if (MSVC)
@@ -63,7 +62,6 @@ endforeach ()
 # compile OSL shaders
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/shaders)
 foreach (oslfile ${shader_sources})
-    # cmake_path(GET oslfile STEM name)
     get_filename_component ( name ${oslfile} NAME_WLE )
     set( osofile ${PROJECT_SOURCE_DIR}/shaders/${name}.oso)
     add_custom_command(
@@ -85,21 +83,29 @@ add_custom_target(OSL
 
 # create HDA
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/otls)
-add_custom_command(
-    COMMAND  ${CMAKE_COMMAND} -E
-        if (MSVC)
-            env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
-            ${HFS}/bin/hython ${PROJECT_SOURCE_DIR}/python/build_hda.py
-        else()
-            env PATH="${HFS}/bin:$ENV{PATH}"
-            hython ${PROJECT_SOURCE_DIR}/python/build_hda.py
-        endif()
-        ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
-        ${PROJECT_SOURCE_DIR}/rixplugins
-        ${PROJECT_SOURCE_DIR}/shaders
-    OUTPUT ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
-    DEPENDS ${args_files} ${shader_objs} ${PROJECT_SOURCE_DIR}/python/build_hda.py
-)
+if (MSVC)
+    add_custom_command(
+        COMMAND  ${CMAKE_COMMAND} -E env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
+            ${HFS}/bin/hython
+            ${PROJECT_SOURCE_DIR}/python/build_hda.py
+            ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
+            ${PROJECT_SOURCE_DIR}/rixplugins
+            ${PROJECT_SOURCE_DIR}/shaders
+        OUTPUT ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
+        DEPENDS ${args_files} ${shader_objs} ${PROJECT_SOURCE_DIR}/python/build_hda.py
+    )
+else()
+    add_custom_command(
+        COMMAND  ${CMAKE_COMMAND} -E env PATH="${HFS}/bin:$ENV{PATH}"
+            hython
+            ${PROJECT_SOURCE_DIR}/python/build_hda.py
+            ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
+            ${PROJECT_SOURCE_DIR}/rixplugins
+            ${PROJECT_SOURCE_DIR}/shaders
+        OUTPUT ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
+        DEPENDS ${args_files} ${shader_objs} ${PROJECT_SOURCE_DIR}/python/build_hda.py
+    )
+endif()
 
 add_custom_target(HDA ALL
                 DEPENDS ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
