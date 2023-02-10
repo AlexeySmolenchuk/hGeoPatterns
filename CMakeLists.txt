@@ -116,7 +116,6 @@ add_custom_target(HDA ALL
 file (GLOB houdini_textures ${HFS}/houdini/pic/texture/brick*.rat)
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/textures)
 foreach (houdini_texture ${houdini_textures})
-    # cmake_path(GET houdini_texture STEM name)
     get_filename_component ( name ${houdini_texture} NAME_WLE )
     set( texture ${PROJECT_SOURCE_DIR}/textures/${name}.tex)
     add_custom_command(
