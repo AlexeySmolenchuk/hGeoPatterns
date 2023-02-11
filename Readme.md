@@ -23,4 +23,7 @@ OSL shaders are examples demonstrating various usecases.
 #### SampleTexture
 #### Ripples
 
+### VOP structures
+Custom structures defined in C++ and OSL headers also defined as houdini vop type in *vop/structs.json*, which allows you to work with this structures in **OSL Generic Shader Builder**.
+
 ### Note about derivatives in OSL and RIS
