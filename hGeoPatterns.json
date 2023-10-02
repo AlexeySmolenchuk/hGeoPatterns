@@ -2,8 +2,9 @@
     "load_package_once": true,
     "env": [
         { "HOUDINI_PATH": "${HOUDINI_PACKAGE_PATH}" },
-        { "RMAN_RIXPLUGINPATH": "${HOUDINI_PACKAGE_PATH}/rixplugins:${RMANTREE}/lib/plugins" },
-        { "RMAN_SHADERPATH": "${HOUDINI_PACKAGE_PATH}/shaders:${RMANTREE}/lib/shaders" },
+        { "RMAN_RIXPLUGINPATH": "${HOUDINI_PACKAGE_PATH}/rixplugins:@" },
+        { "RMAN_SHADERPATH": "${HOUDINI_PACKAGE_PATH}/shaders:@" },
+        { "RMAN_TEXTUREPATH": "${HOUDINI_PACKAGE_PATH}/textures:@" },
         { "PATH": "${RMANTREE}/bin:${PATH}" }
     ]
 }

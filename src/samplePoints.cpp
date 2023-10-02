@@ -33,7 +33,6 @@ public:
 		RtUString coordsys;
 		GU_Detail *gdp;
 		GEO_PointTreeGAOffset *tree;
-
 	};
 
 	int Init(RixContext &ctx, RtUString const pluginpath) override;
@@ -94,8 +93,8 @@ samplePoints::Finalize(RixContext &ctx)
 {
 	for (auto item: m_trees)
 	{
-		delete item.second.first; //gdp
-		delete item.second.second; //tree
+		delete item.second.first; // gdp
+		delete item.second.second; // tree
 	}
 	PIXAR_ARGUSED(ctx);
 }
@@ -146,7 +145,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	if (data->coordsys.Empty())
 		data->coordsys = Rix::k_object;
 
-	std::cout << data->coordsys.CStr() << std::endl;
+	// std::cout << data->coordsys.CStr() << std::endl;
 
 	data->gdp = nullptr;
 	data->tree = nullptr;
@@ -260,9 +259,17 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 	RtFloat3 const *P;
 	RtFloat3 *Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
 
-	RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
-	if (pDetail == k_RixSCInvalidDetail)
-		sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+	// __Pref and Po are not defined for volumes
+	if (sCtx->scTraits.volume != NULL)
+	{
+		sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+	}
+	else
+	{
+		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
+		if (pDetail == k_RixSCInvalidDetail)
+			sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+	}
 
 	memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
 

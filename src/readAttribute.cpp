@@ -151,7 +151,7 @@ void readAttribute::CreateInstanceData(RixContext& ctx,
 		{
 			m_geo[filename] = gdp;
 			data->gdp = gdp;
-			std::cout << "Loaded: " << filename.CStr() << " " << gdp->getMemoryUsage(true) <<std::endl;
+			// std::cout << "Loaded: " << filename.CStr() << " " << gdp->getMemoryUsage(true) <<std::endl;
 		}
 		else
 		{

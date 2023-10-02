@@ -91,8 +91,8 @@ closest::Finalize(RixContext &ctx)
 {
 	for (auto item: m_isect)
 	{
-		delete item.second->detail();
-		delete item.second;
+		delete item.second->detail(); // gdp
+		delete item.second; // intersect
 	}
 	PIXAR_ARGUSED(ctx);
 }
@@ -153,7 +153,7 @@ void closest::CreateInstanceData(RixContext& ctx,
 			GU_Detail * gdp = new GU_Detail;
 			if (gdp->load(filename.CStr()).success())
 			{
-				// TODO: group searh
+				// TODO: group search
 				GA_PrimitiveGroup* grp = nullptr;
 
 				// Flag 'picking' should be set to 1.  When set to 0, curves and surfaces will be polygonalized.
@@ -246,13 +246,18 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 	RtFloat3 const *P;
 	RtFloat3 *Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
 
-	RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
-	if (pDetail == k_RixSCInvalidDetail)
-		sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+	// __Pref and Po are not defined for volumes
+	if (sCtx->scTraits.volume != NULL)
+	{
+		sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+	}
+	else
+	{
+		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
+		if (pDetail == k_RixSCInvalidDetail)
+			sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+	}
 	
-	sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
-
-
 	memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
 
 	sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
@@ -283,8 +288,8 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 				u[i] = min_info.u1/(min_info.prim->getVertexCount()-1);
 
 			v[i] = min_info.v1;
-			// Normalize Polyline parametrization
-			if ((primtype==GA_PRIMPOLY) && !min_info.prim.isClosed() || (type==GA_PRIMNURBCURVE) || (type==GA_PRIMBEZCURVE))
+			// For 1D geometry (polylines, nurbs, bezier) we can use v to store useful attribute Length
+			if (((primtype==GA_PRIMPOLY) && !min_info.prim.isClosed()) || (primtype==GA_PRIMNURBCURVE) || (primtype==GA_PRIMBEZCURVE))
 				v[i] = min_info.prim->calcPerimeter();
 
 			prim[i] = min_info.prim.offset();

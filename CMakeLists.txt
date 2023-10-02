@@ -17,46 +17,44 @@ foreach (var ${vars})
     endif ()
 endforeach ()
 
+find_package(Houdini REQUIRED
+    HINTS ${HFS}/toolkit/cmake)
+
 # Houdini and RFH can setup PYTHONPATH for us (Windows only)
 set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
-
-include_directories(SYSTEM ${HFS}/toolkit/include )
-link_directories( ${HFS}/dsolib ${HFS}/custom/houdini/dsolib )
-
-add_definitions(-DSIZEOF_VOID_P=8 -D_USE_MATH_DEFINES -DSESI_LITTLE_ENDIAN -DAMD64)
 add_definitions(-DNDEBUG)
 
 
 if (MSVC)
-    add_compile_options(-w)
     link_libraries(libprman libpxrcore libstats)
-    link_libraries(libGA libGU libGEO libUT libSYS)
 else()
-    add_definitions(-DLINUX -DUSE_PTHREADS)
-    add_compile_options(-W)
     link_libraries(prman pxrcore stats)
-    link_libraries(HoudiniGEO HoudiniUT)
 endif()
 
 # gather sources
-file (GLOB rixplugin_sources "src/*.cpp")
 file (GLOB args_files "rixplugins/Args/*.args")
 file (GLOB shader_headers "osl/include/*.h")
 file (GLOB shader_sources "osl/*.osl")
 
-# compile rixplugins
-foreach (_rixpluginame ${rixplugin_sources})
-    get_filename_component ( name ${_rixpluginame} NAME_WLE )
-    add_library( ${name} SHARED ${_rixpluginame})
-    if (MSVC)
-        set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/rixplugins PREFIX "")
-    else()
-        set_target_properties(${name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/rixplugins PREFIX "")
-    endif()
+set (rixplugin_names
+    samplePoints
+    readAttribute
+    closest
+    interpolator)
+    
+foreach (rixplugin_name ${rixplugin_names})
+    add_library( ${rixplugin_name} SHARED src/${rixplugin_name}.cpp)
+    target_link_libraries( ${rixplugin_name} Houdini )
+    set_target_properties(${rixplugin_name} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/rixplugins
+        LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/rixplugins
+        PREFIX "")
 endforeach ()
+
+add_custom_target(RIXPLUGINS DEPENDS ${rixplugin_names})
 
 
 # compile OSL shaders
