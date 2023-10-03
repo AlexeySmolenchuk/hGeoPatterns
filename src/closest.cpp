@@ -20,6 +20,7 @@ public:
 
 		// inputs
 		k_filename,
+		k_primgroup,
 		k_maxdist,
 		k_coordsys,
 
@@ -109,6 +110,7 @@ closest::GetParamTable()
 
 		// inputs
 		RixSCParamInfo(RtUString("filename"), k_RixSCString),
+		RixSCParamInfo(RtUString("primgroup"), k_RixSCString),
 		RixSCParamInfo(RtUString("maxdist"), k_RixSCFloat),
 		RixSCParamInfo(RtUString("coordsys"), k_RixSCString),
 
@@ -136,6 +138,9 @@ void closest::CreateInstanceData(RixContext& ctx,
 	RtUString filename = US_NULL;
 	params->EvalParam(k_filename, -1, &filename);
 
+	RtUString primgroup = US_NULL;
+	params->EvalParam(k_primgroup, -1, &primgroup);
+
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
 	if (data->coordsys.Empty())
@@ -146,7 +151,11 @@ void closest::CreateInstanceData(RixContext& ctx,
 
 	if (!filename.Empty())
 	{
-		auto it = m_isect.find(filename);
+		char buff[255];
+		sprintf(buff, "%s:%s", filename.CStr(), primgroup.CStr());
+		RtUString key(buff);
+
+		auto it = m_isect.find(key);
 
 		if (it == m_isect.end())
 		{
@@ -156,9 +165,14 @@ void closest::CreateInstanceData(RixContext& ctx,
 				// TODO: group search
 				GA_PrimitiveGroup* grp = nullptr;
 
+				if (!primgroup.Empty())
+				{
+					grp = gdp->findPrimitiveGroup(primgroup.CStr());
+				}
+
 				// Flag 'picking' should be set to 1.  When set to 0, curves and surfaces will be polygonalized.
 				GU_RayIntersect *isect = new GU_RayIntersect(gdp, grp, 1, 0, 1);
-				m_isect[filename] = isect;
+				m_isect[key] = isect;
 				data->isect = isect;
 				// std::cout << "Loaded "<< gdp->getNumPoints() << " points: " << filename.CStr() << " " << isect->getMemoryUsage(true) << std::endl;
 			}
