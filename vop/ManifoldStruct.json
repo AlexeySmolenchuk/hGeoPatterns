@@ -1,0 +1,28 @@
+{
+	"typeDefinitions" : [
+		{
+			"type" : "struct",
+			"typeName" : "Manifold",
+			"typeLabel" : "Manifold",
+			"codeTypeName" : "Manifold",
+			"definitionCode":"#include <Manifold.h>",
+			"variables":[
+				{
+						"typeName":"point",
+						"name":"Q",
+						"label":"Q"
+				},
+				{
+						"typeName":"normal",
+						"name":"QN",
+						"label":"QN"
+				},
+				{
+						"typeName":"float",
+						"name":"Qradius",
+						"label":"Qradius"
+				}
+			]			
+		}
+	]
+}
