@@ -22,6 +22,7 @@ public:
 		k_filename,
 		k_primgroup,
 		k_maxdist,
+		k_normdist,
 		k_coordsys,
 
 		// end of list
@@ -30,6 +31,7 @@ public:
 
 	struct Data
 	{
+		RtInt normdist;
 		RtUString coordsys;
 		GU_RayIntersect *isect;
 	};
@@ -112,6 +114,7 @@ closest::GetParamTable()
 		RixSCParamInfo(RtUString("filename"), k_RixSCString),
 		RixSCParamInfo(RtUString("primgroup"), k_RixSCString),
 		RixSCParamInfo(RtUString("maxdist"), k_RixSCFloat),
+		RixSCParamInfo(RtUString("normdist"), k_RixSCInteger),
 		RixSCParamInfo(RtUString("coordsys"), k_RixSCString),
 
 
@@ -141,6 +144,9 @@ void closest::CreateInstanceData(RixContext& ctx,
 	RtUString primgroup = US_NULL;
 	params->EvalParam(k_primgroup, -1, &primgroup);
 
+	data->normdist = 0;
+	params->EvalParam(k_normdist, -1, &data->normdist);
+
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
 	if (data->coordsys.Empty())
@@ -162,7 +168,6 @@ void closest::CreateInstanceData(RixContext& ctx,
 			GU_Detail * gdp = new GU_Detail;
 			if (gdp->load(filename.CStr()).success())
 			{
-				// TODO: group search
 				GA_PrimitiveGroup* grp = nullptr;
 
 				if (!primgroup.Empty())
@@ -317,6 +322,9 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 			v[i] = 0;
 			dist[i] = maxd[i];
 		}
+
+		if (data->normdist)
+			dist[i] /= maxd[i];
 	}
 
 	return 0;

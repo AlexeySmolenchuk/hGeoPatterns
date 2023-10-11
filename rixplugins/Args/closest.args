@@ -28,6 +28,15 @@
         <help>Search distance</help>
     </param>
 
+    <param name="normdist"
+        label="Normalize Distance"
+        type="int"
+        widget="checkBox"
+        default="0"
+        connectable="False">
+        <help>Return Actual Distance or Normalized to Range 0-1</help>
+    </param>
+
     <param name="coordsys"
         label="Coordinate System"
         type="string"

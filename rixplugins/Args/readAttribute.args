@@ -7,11 +7,11 @@
     </help>
 
     <param name="filename"
-        label="Filename"
+        label="Filename Override"
         type="string"
         widget="fileInput"
         connectable="False">
-        <help>Geometry Filename. When empty read geometry from incoming connection</help>
+        <help>Override Geometry Filename. When empty - read geometry from incoming connection.</help>
     </param>
 
     <param name="attribute"
