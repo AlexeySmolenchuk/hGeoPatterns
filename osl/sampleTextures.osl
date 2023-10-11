@@ -16,13 +16,16 @@ shader sampleTextures(
     output color DBG = 0,
 )
 {
-    for (int n=0; n<8; n++){
+    float sum = 0;
+
+    for (int n = 0; n < 8; n++){
         vector uv = coords[n];
         if (weights[n] > 0.0){
             uv.x = uv.x - floor(uv.x);
             uv.y = ceil(uv.y) - uv.y;
             vector temp = pow(texture(file, uv.x, uv.y, "width", 1.0)/0.18, gamma) * weights[n];
             masks[n] = temp.x;
+            sum += temp.x;
             out += temp;
             DBG += randoms[n] * weights[n];
         }
@@ -30,8 +33,9 @@ shader sampleTextures(
 
     out = pow(out, 1.0/gamma)*0.18;
     
-    float inv = 1.0/(masks[0]+masks[1]+masks[2]+masks[3]+masks[4]);
-    for (int i = 0; i<8; i++){
+    float inv = 1.0/sum;
+
+    for (int i = 0; i < 8; i++){
         masks[i]  *= inv;
     }
 }
