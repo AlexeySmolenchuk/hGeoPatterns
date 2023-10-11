@@ -34,7 +34,7 @@ shader buildCoords (
     if (!getattribute("primvar", "__Pref", myP))
         getattribute("primvar", "P", myP);
 
-    myP = transform("world", myP);
+    myP = transform("object", myP);
 
     int n = Positions.num;
 
