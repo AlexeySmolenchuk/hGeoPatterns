@@ -19,7 +19,9 @@ shader sampleTextures(
     for (int n=0; n<8; n++){
         vector uv = coords[n];
         if (weights[n] > 0.0){
-            vector temp = pow(texture(file, uv.x, -uv.y, "width", 1.0)/0.18, gamma) * weights[n];
+            uv.x = uv.x - floor(uv.x);
+            uv.y = ceil(uv.y) - uv.y;
+            vector temp = pow(texture(file, uv.x, uv.y, "width", 1.0)/0.18, gamma) * weights[n];
             masks[n] = temp.x;
             out += temp;
             DBG += randoms[n] * weights[n];
