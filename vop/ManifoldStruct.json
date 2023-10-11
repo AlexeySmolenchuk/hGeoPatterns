@@ -5,7 +5,7 @@
 			"typeName" : "Manifold",
 			"typeLabel" : "Manifold",
 			"codeTypeName" : "Manifold",
-			"definitionCode":"#include <Manifold.h>",
+			"definitionCode": "struct Manifold{\n\tpoint Q;\n\tnormal QN;\n\tfloat Qradius;\n};\n",
 			"variables":[
 				{
 						"typeName":"point",
