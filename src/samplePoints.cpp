@@ -137,7 +137,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	RtUString filename = US_NULL;
 	params->EvalParam(k_filename, -1, &filename);
 
-	data->numPoints = 4;
+	data->numPoints = 1;
 	params->EvalParam(k_numPoints, -1, &data->numPoints);
 
 	data->coordsys = Rix::k_object;

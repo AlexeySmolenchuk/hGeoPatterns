@@ -16,7 +16,7 @@
     <param name="numPoints"
         label="Number of Points"
         type="int"
-        default="4"
+        default="1"
         min="1"
         max="8"
         connectable="False">
