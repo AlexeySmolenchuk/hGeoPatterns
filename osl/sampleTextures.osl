@@ -5,7 +5,12 @@ shader sampleTextures(
         string options = "texture",
         int connectable = 0,
         ]],
+    float filter = 1.0 [[
+        string label = "Filter Width",
+        int connectable = 0,
+        ]],
     float gamma = 1.0 [[
+        string label = "Blending Contrast",
         int connectable = 0,
         ]],
     vector coords[] = {},
@@ -21,9 +26,12 @@ shader sampleTextures(
     for (int n = 0; n < 8; n++){
         vector uv = coords[n];
         if (weights[n] > 0.0){
+
+            // force tiling
             uv.x = uv.x - floor(uv.x);
-            uv.y = ceil(uv.y) - uv.y;
-            vector temp = pow(texture(file, uv.x, uv.y, "width", 1.0)/0.18, gamma) * weights[n];
+            uv.y = uv.y - floor(uv.y);
+
+            vector temp = pow(texture(file, uv.x, 1.0-uv.y, "width", filter)/0.18, gamma) * weights[n];
             masks[n] = temp.x;
             sum += temp.x;
             out += temp;

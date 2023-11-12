@@ -1,16 +1,17 @@
 #include "hGeoStructsOSL.h"
 
-vector build_coord_system(point pos, vector dir, normal n, point center, float scale, float angle, float randomize){
+vector build_coord_system(point pos, vector dir, normal n, point center, vector scale, float angle, float randomize){
     vector _u = normalize(dir);
     vector _v = normalize(cross(n, dir));
     vector coord = pos - center;
-    coord = vector(dot(coord, _u), dot(coord, _v), 0)/scale;
+    coord = vector(dot(coord, _u), dot(coord, _v), 0);
 
     if (angle !=0){
         float a = angle * M_PI;
         coord = vector( cos(a)*coord.x - sin(a)*coord.y, sin(a)*coord.x + cos(a)*coord.y, 0);
     }
-    coord += vector(noise("cell", center*1000)-0.5) * randomize -0.5;
+    coord *= vector(1/scale.x, 1/scale.y, 1);
+    coord += vector(noise("cell", center*1000)-0.5) * randomize + 0.5;
     return coord;
 }
 
@@ -18,8 +19,11 @@ shader buildCoords (
     ArrayData Positions = {},
     ArrayData Normals = {},
     ArrayData Directions = {},
+    ArrayData Scales = {},
     ArrayData Distances = {},
-    float scale = 1.0,
+    float scalex = 1.0,
+    float scaley = 1.0,
+    vector defaultDirection = vector(0, 0, 1),
     float sharpness = 10.0,
     float angle = 0.0,
     float randomize = 1.0,
@@ -38,14 +42,49 @@ shader buildCoords (
 
     int n = Positions.num;
 
-             coords[0] = build_coord_system(myP, Directions.v0, Normals.v0, Positions.v0, scale, angle, randomize);
-    if (n>1) coords[1] = build_coord_system(myP, Directions.v1, Normals.v1, Positions.v1, scale, angle, randomize);
-    if (n>2) coords[2] = build_coord_system(myP, Directions.v2, Normals.v2, Positions.v2, scale, angle, randomize);
-    if (n>3) coords[3] = build_coord_system(myP, Directions.v3, Normals.v3, Positions.v3, scale, angle, randomize);
-    if (n>4) coords[4] = build_coord_system(myP, Directions.v4, Normals.v4, Positions.v4, scale, angle, randomize);
-    if (n>5) coords[5] = build_coord_system(myP, Directions.v5, Normals.v5, Positions.v5, scale, angle, randomize);
-    if (n>6) coords[6] = build_coord_system(myP, Directions.v6, Normals.v6, Positions.v6, scale, angle, randomize);
-    if (n>7) coords[7] = build_coord_system(myP, Directions.v7, Normals.v7, Positions.v7, scale, angle, randomize);
+    ArrayData dir;
+    if (isconnected(Directions)){
+        dir = Directions;
+    }else{
+        dir.v0 = defailtDirection;
+        dir.v1 = defailtDirection;
+        dir.v2 = defailtDirection;
+        dir.v3 = defailtDirection;
+        dir.v4 = defailtDirection;
+        dir.v5 = defailtDirection;
+        dir.v6 = defailtDirection;
+        dir.v7 = defailtDirection;
+    }
+
+        ArrayData scale;
+    if (isconnected(Scales)){
+        scale.v0 = Scales.v0 * vector(scalex, scaley, 1.0);
+        scale.v1 = Scales.v1 * vector(scalex, scaley, 1.0);
+        scale.v2 = Scales.v2 * vector(scalex, scaley, 1.0);
+        scale.v3 = Scales.v3 * vector(scalex, scaley, 1.0);
+        scale.v4 = Scales.v4 * vector(scalex, scaley, 1.0);
+        scale.v5 = Scales.v5 * vector(scalex, scaley, 1.0);
+        scale.v6 = Scales.v6 * vector(scalex, scaley, 1.0);
+        scale.v7 = Scales.v7 * vector(scalex, scaley, 1.0);
+    }else{
+        scale.v0 = vector(scalex, scaley, 1.0);
+        scale.v1 = vector(scalex, scaley, 1.0);
+        scale.v2 = vector(scalex, scaley, 1.0);
+        scale.v3 = vector(scalex, scaley, 1.0);
+        scale.v4 = vector(scalex, scaley, 1.0);
+        scale.v5 = vector(scalex, scaley, 1.0);
+        scale.v6 = vector(scalex, scaley, 1.0);
+        scale.v7 = vector(scalex, scaley, 1.0);
+    }
+
+             coords[0] = build_coord_system(myP, dir.v0, Normals.v0, Positions.v0, scale.v0, angle, randomize);
+    if (n>1) coords[1] = build_coord_system(myP, dir.v1, Normals.v1, Positions.v1, scale.v1, angle, randomize);
+    if (n>2) coords[2] = build_coord_system(myP, dir.v2, Normals.v2, Positions.v2, scale.v2, angle, randomize);
+    if (n>3) coords[3] = build_coord_system(myP, dir.v3, Normals.v3, Positions.v3, scale.v3, angle, randomize);
+    if (n>4) coords[4] = build_coord_system(myP, dir.v4, Normals.v4, Positions.v4, scale.v4, angle, randomize);
+    if (n>5) coords[5] = build_coord_system(myP, dir.v5, Normals.v5, Positions.v5, scale.v5, angle, randomize);
+    if (n>6) coords[6] = build_coord_system(myP, dir.v6, Normals.v6, Positions.v6, scale.v6, angle, randomize);
+    if (n>7) coords[7] = build_coord_system(myP, dir.v7, Normals.v7, Positions.v7, scale.v7, angle, randomize);
 
              weights[0] = 1.0;
     if (n>1) weights[1] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v1.x ) * 2, sharpness);
