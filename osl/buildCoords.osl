@@ -46,14 +46,14 @@ shader buildCoords (
     if (isconnected(Directions)){
         dir = Directions;
     }else{
-        dir.v0 = defailtDirection;
-        dir.v1 = defailtDirection;
-        dir.v2 = defailtDirection;
-        dir.v3 = defailtDirection;
-        dir.v4 = defailtDirection;
-        dir.v5 = defailtDirection;
-        dir.v6 = defailtDirection;
-        dir.v7 = defailtDirection;
+        dir.v0 = defaultDirection;
+        dir.v1 = defaultDirection;
+        dir.v2 = defaultDirection;
+        dir.v3 = defaultDirection;
+        dir.v4 = defaultDirection;
+        dir.v5 = defaultDirection;
+        dir.v6 = defaultDirection;
+        dir.v7 = defaultDirection;
     }
 
         ArrayData scale;
