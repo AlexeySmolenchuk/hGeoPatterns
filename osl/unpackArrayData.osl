@@ -1,0 +1,19 @@
+#include "hGeoStructsOSL.h"
+
+shader unpackArrayData (
+    ArrayData data = {},
+
+    output vector v0 = data.v0,
+    output vector v1 = data.v1,
+    output vector v2 = data.v2,
+    output vector v3 = data.v3,
+    output vector v4 = data.v4,
+    output vector v5 = data.v5,
+    output vector v6 = data.v6,
+    output vector v7 = data.v7,
+
+    output int meshID = data.meshID,
+    output int num = data.num,
+)
+{
+}
