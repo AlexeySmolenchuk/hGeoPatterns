@@ -1,10 +1,13 @@
 {
     "load_package_once": true,
     "env": [
-        { "HOUDINI_PATH": "${HOUDINI_PACKAGE_PATH}" },
-        { "RMAN_RIXPLUGINPATH": "${HOUDINI_PACKAGE_PATH}/rixplugins:@" },
-        { "RMAN_SHADERPATH": "${HOUDINI_PACKAGE_PATH}/shaders:@" },
-        { "RMAN_TEXTUREPATH": "${HOUDINI_PACKAGE_PATH}/textures:@" },
-        { "PATH": "${RMANTREE}/bin:${PATH}" }
+        { "HGEOPATTERNS_PATH":  "${HOUDINI_PACKAGE_PATH}" },
+        { "RMAN_EXAMPLES_PATH": "C:/Pixar/PixarRenderMan-Examples-25.0" },
+
+        { "HOUDINI_PATH":       "${HGEOPATTERNS_PATH}" },
+        { "RMAN_RIXPLUGINPATH": "${HGEOPATTERNS_PATH}/rixplugins" },
+        { "RMAN_SHADERPATH":    "${HGEOPATTERNS_PATH}/shaders" },
+        { "RMAN_TEXTUREPATH":   "${HGEOPATTERNS_PATH}/textures" },
+        { "OSL_INCLUDEPATH":    "-I${RMAN_EXAMPLES_PATH}/plugins/include/osl" }
     ]
 }
