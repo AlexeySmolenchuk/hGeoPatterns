@@ -1,24 +1,20 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(hGeoPatterns VERSION 1.0)
 
+# Please update variables
+SET(HFS "C:/Program Files/Side Effects Software/Houdini 19.5.605" CACHE PATH "Houdini Installation Folder")
+SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-25.1" CACHE PATH "RendermanProServer Installation Folder")
+SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-25.1" CACHE PATH "RendermanForHoudini Installation Folder")
+
+
 # prevent attempt to build right in the project
 if ("${PROJECT_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message (FATAL_ERROR "Not allowed to run in-source build!")
 endif ()
 
-# fetch required environment variables
-set (vars HFS RMANTREE RFHTREE)
-foreach (var ${vars})
-    if(NOT DEFINED ENV{${var}})
-        message(FATAL_ERROR "require " ${var} " environment variable")
-    else()
-        set(${var} $ENV{${var}})
-        message(STATUS "Using: " $ENV{${var}})
-    endif ()
-endforeach ()
 
 find_package(Houdini REQUIRED
-    HINTS ${HFS}/toolkit/cmake)
+    PATHS ${HFS}/toolkit/cmake)
 
 # Houdini and RFH can setup PYTHONPATH for us (Windows only)
 set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
@@ -44,7 +40,7 @@ set (rixplugin_names
     readAttribute
     closest
     interpolator)
-    
+
 foreach (rixplugin_name ${rixplugin_names})
     add_library( ${rixplugin_name} SHARED src/${rixplugin_name}.cpp)
     target_link_libraries( ${rixplugin_name} Houdini )
@@ -109,25 +105,3 @@ add_custom_target(HDA ALL
                 DEPENDS ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
                 SOURCES ${args_files} ${shader_objs} )
 
-
-# Convert some textures shipped with Houdini for examples
-file (GLOB houdini_textures ${HFS}/houdini/pic/texture/brick*.rat)
-file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/textures)
-foreach (houdini_texture ${houdini_textures})
-    get_filename_component ( name ${houdini_texture} NAME_WLE )
-    set( texture ${PROJECT_SOURCE_DIR}/textures/${name}.tex)
-    add_custom_command(
-        COMMAND
-            ${HFS}/bin/iconvert ${houdini_texture} ${name}.exr
-            &&
-            ${RMANTREE}/bin/txmake -format openexr -mode periodic -half ${name}.exr ${texture}
-        OUTPUT ${texture}
-        MAIN_DEPENDENCY ${houdini_texture}
-    )
-    list (APPEND textures ${texture})
-endforeach ()
-
-add_custom_target(TEXTURES ALL
-                DEPENDS ${textures}
-                SOURCES ${houdini_textures}
-)
