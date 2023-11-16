@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(hGeoPatterns VERSION 1.0)
 
-# Please update variables
-SET(HFS "C:/Program Files/Side Effects Software/Houdini 19.5.605" CACHE PATH "Houdini Installation Folder")
-SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-25.1" CACHE PATH "RendermanProServer Installation Folder")
-SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-25.1" CACHE PATH "RendermanForHoudini Installation Folder")
-
+# Please update variables for your OS
+if (MSVC)
+    # WINDOWS
+    SET(HFS "C:/Program Files/Side Effects Software/Houdini 19.5.605" CACHE PATH "Houdini Installation Folder")
+    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-25.1" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-25.1" CACHE PATH "RendermanForHoudini Installation Folder")
+else()
+    # LINUX
+    SET(HFS "/opt/hfs19.0.589" CACHE PATH "Houdini Installation Folder")
+    SET(RMANTREE "/opt/pixar/RenderManProServer-24.4" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "/opt/pixar/RenderManForHoudini-24.4-py3" CACHE PATH "RendermanForHoudini Installation Folder")
+endif()
 
 # prevent attempt to build right in the project
 if ("${PROJECT_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
