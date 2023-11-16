@@ -275,18 +275,17 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 
 	sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 	UT_Vector3 pos;
-	UT_Vector3 attr;
 	GEO_PointTree::IdxArrayType plist;
 	UT_FloatArray distances;
 	int found = -1;
-	
+
 	for (int i = 0; i < sCtx->numPts; ++i)
 	{
 		pos.x() = Pw[i].x;
 		pos.y() = Pw[i].y;
 		pos.z() = Pw[i].z;
 		found = data->tree->findNearestGroupIdx(pos, FLT_MAX, data->numPoints, plist, distances);
-		
+
 		//number of sampled points
 		for (int n=0; n<data->numPoints; n++)
 		{
