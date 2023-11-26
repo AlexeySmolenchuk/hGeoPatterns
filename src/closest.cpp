@@ -165,7 +165,7 @@ void closest::CreateInstanceData(RixContext& ctx,
 
 		if (it == m_isect.end())
 		{
-			GU_Detail * gdp = new GU_Detail;
+			GU_Detail *gdp = new GU_Detail;
 			if (gdp->load(filename.CStr()).success())
 			{
 				GA_PrimitiveGroup* grp = nullptr;
@@ -173,9 +173,11 @@ void closest::CreateInstanceData(RixContext& ctx,
 				if (!primgroup.Empty())
 				{
 					grp = gdp->findPrimitiveGroup(primgroup.CStr());
+					if (!grp)
+						return;
 				}
 
-				// Flag 'picking' should be set to 1.  When set to 0, curves and surfaces will be polygonalized.
+				// Flag 'picking' should be set to 1. When set to 0, curves and surfaces will be polygonalized.
 				GU_RayIntersect *isect = new GU_RayIntersect(gdp, grp, 1, 0, 1);
 				m_isect[key] = isect;
 				data->isect = isect;
@@ -276,11 +278,11 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 		if (pDetail == k_RixSCInvalidDetail)
 			sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
 	}
-	
+
 	memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
 
 	sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
-	
+
 	UT_Vector3 pos;
 
 	const float *maxd;
