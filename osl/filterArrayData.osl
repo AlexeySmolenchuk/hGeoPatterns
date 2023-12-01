@@ -1,0 +1,44 @@
+#include "hGeoStructsOSL.h"
+
+shader filterArrayData (
+    ArrayData ValuesA = {},
+    ArrayData DistA = {},
+    float sharpness = 10.0,
+
+    output color filtered = 0
+)
+{
+    vector values[8] = {0,0,0,0,0,0,0,0};
+    float weights[8] = {0,0,0,0,0,0,0,0};
+
+    int n = ValuesA.num;
+    if (n==0)
+        return;
+
+             values[0] = ValuesA.v0;
+    if (n>1) values[1] = ValuesA.v1;
+    if (n>2) values[2] = ValuesA.v2;
+    if (n>3) values[3] = ValuesA.v3;
+    if (n>4) values[4] = ValuesA.v4;
+    if (n>5) values[5] = ValuesA.v5;
+    if (n>6) values[6] = ValuesA.v6;
+    if (n>7) values[7] = ValuesA.v7;
+
+             weights[0] = 1.0;
+    if (n>1) weights[1] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v1.x ) * 2, sharpness);
+    if (n>2) weights[2] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v2.x ) * 2, sharpness);
+    if (n>3) weights[3] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v3.x ) * 2, sharpness);
+    if (n>4) weights[4] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v4.x ) * 2, sharpness);
+    if (n>5) weights[5] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v5.x ) * 2, sharpness);
+    if (n>6) weights[6] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v6.x ) * 2, sharpness);
+    if (n>7) weights[7] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v7.x ) * 2, sharpness);
+
+
+    float overal_weight = 0;
+    for (int i = 0; i<n; i++){
+        filtered += values[i] * weights[i];
+        overal_weight += weights[i];
+    }
+
+    filtered /= overal_weight;
+}
