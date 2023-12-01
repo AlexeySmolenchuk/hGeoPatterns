@@ -32,9 +32,6 @@ Utility shader for building array of uv's from point-cloud-like data.
 
 #### SampleTexture
 Utility shader for batch reading textures from an array of uv's.
-
-#### Ripples
-TODO
 <br/><br/>
 
 ## VOP structures
