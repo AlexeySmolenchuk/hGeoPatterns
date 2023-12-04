@@ -32,7 +32,7 @@ Can be downloaded from [here](https://visualstudio.microsoft.com/vs/older-downlo
 ## Building
 Update values for **HFS**, **RMANTREE**, **RFHTREE** variables in the [CMakeLists.txt](../CMakeLists.txt#L4-L15)
 
-Then, assuming you opened terminal in the root of *hGeoPattern*
+Then, assuming you opened terminal in the root of *hGeoPatterns*
 ``` sh
 mkdir build
 cd build
@@ -43,7 +43,7 @@ cmake --build . --config Release -j8
 ## Installation
 
 #### Option A
-Add root directory of hGeoPattern to **HOUDINI_PACKAGE_DIR** environment variable
+Add root directory of hGeoPatterns to **HOUDINI_PACKAGE_DIR** environment variable
 
 #### Option B
 Update the first variable in [*hGeoPatterns.json*](../hGeoPatterns.json#L4) with absolute path to plugin root folder and put it in your *$HOUDINI_USER_PREF_DIR/packages*
