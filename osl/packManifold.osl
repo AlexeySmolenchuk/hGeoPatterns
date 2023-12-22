@@ -1,0 +1,15 @@
+struct Manifold{
+    point Q;
+    normal QN;
+    float Qradius;
+};
+
+shader packManifold (
+    point Q = 0,
+    normal QN = 0,
+    float Qradius = 0,
+
+    output Manifold result = {Q, QN, Qradius}
+)
+{
+}

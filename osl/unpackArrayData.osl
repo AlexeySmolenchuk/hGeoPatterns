@@ -12,8 +12,8 @@ shader unpackArrayData (
     output vector v6 = data.v6,
     output vector v7 = data.v7,
 
-    output int meshID = data.meshID,
     output int num = data.num,
+    // output int meshID = data.meshID
 )
 {
 }

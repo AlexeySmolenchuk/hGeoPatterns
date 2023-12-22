@@ -1,0 +1,12 @@
+#include "hGeoStructsOSL.h"
+
+shader unpackClosestData (
+    ClosestData data = {},
+
+    output int prim = data.prim,
+    output float U = data.u,
+    output float V = data.v,
+    // output int meshID = data.meshID
+)
+{
+}

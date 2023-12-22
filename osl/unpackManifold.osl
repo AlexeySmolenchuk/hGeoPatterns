@@ -1,0 +1,15 @@
+struct Manifold{
+    point Q;
+    normal QN;
+    float Qradius;
+};
+
+shader unpackManifold (
+    Manifold manifold = {},
+
+    output point Q = manifold.Q,
+    output normal QN = manifold.QN,
+    output float Qradius = manifold.Qradius
+)
+{
+}
