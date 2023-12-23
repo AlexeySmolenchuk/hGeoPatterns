@@ -196,7 +196,7 @@ void closest::CreateInstanceData(RixContext& ctx,
 							const GU_PrimPacked* packed = UTverify_cast<const GU_PrimPacked*>(gdp->getPrimitive(*it));
 							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("usdFrame"), frame);
 							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("abcframe"), frame/fps);
-							// packed->findIntrinsic("usdFrame").;
+							
 							GU_Detail dest;
 							packed->unpackUsingPolygons(dest);
 
