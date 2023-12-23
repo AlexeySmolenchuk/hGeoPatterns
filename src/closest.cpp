@@ -5,6 +5,7 @@
 
 #include <GU/GU_Detail.h>
 #include <GU/GU_RayIntersect.h>
+#include <GU/GU_PrimPacked.h>
 
 #include <map>
 #include <iostream>
@@ -24,6 +25,8 @@ public:
 		k_maxdist,
 		k_normdist,
 		k_coordsys,
+		k_frame,
+		k_fps,
 
 		// end of list
 		k_numParams
@@ -116,6 +119,8 @@ closest::GetParamTable()
 		RixSCParamInfo(RtUString("maxdist"), k_RixSCFloat),
 		RixSCParamInfo(RtUString("normdist"), k_RixSCInteger),
 		RixSCParamInfo(RtUString("coordsys"), k_RixSCString),
+		RixSCParamInfo(RtUString("frame"), k_RixSCFloat),
+		RixSCParamInfo(RtUString("fps"), k_RixSCFloat),
 
 
 		// end of table
@@ -152,13 +157,17 @@ void closest::CreateInstanceData(RixContext& ctx,
 	if (data->coordsys.Empty())
 		data->coordsys = Rix::k_object;
 
+	float frame = 0;
+	float fps =0;
+	params->EvalParam(k_frame, -1, &frame);
+	params->EvalParam(k_fps, -1, &fps);
 
 	data->isect = nullptr;
 
 	if (!filename.Empty())
 	{
 		char buff[255];
-		sprintf(buff, "%s:%s", filename.CStr(), primgroup.CStr());
+		sprintf(buff, "%s:%s:%g", filename.CStr(), primgroup.CStr(), frame*fps);
 		RtUString key(buff);
 
 		auto it = m_isect.find(key);
@@ -175,6 +184,27 @@ void closest::CreateInstanceData(RixContext& ctx,
 					grp = gdp->findPrimitiveGroup(primgroup.CStr());
 					if (!grp)
 						return;
+				}
+
+				// Attempt to unpack all Packeds, Alembics and USD
+				while (GU_PrimPacked::hasPackedPrimitives(*gdp))
+				{
+					for (GA_Iterator it(gdp->getPrimitiveRange()); !it.atEnd(); ++it)
+					{
+						if(GU_PrimPacked::isPackedPrimitive(gdp->getPrimitive(*it)->getTypeDef()))
+						{
+							const GU_PrimPacked* packed = UTverify_cast<const GU_PrimPacked*>(gdp->getPrimitive(*it));
+							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("usdFrame"), frame);
+							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("abcframe"), frame/fps);
+							// packed->findIntrinsic("usdFrame").;
+							GU_Detail dest;
+							packed->unpackUsingPolygons(dest);
+
+							// replace packed with poly version
+							gdp->destroyPrimitive(*gdp->getPrimitive(*it)); // assume it's safe to delete prim while iterating
+							gdp->mergePrimitives(dest, dest.getPrimitiveRange());
+						}
+					}
 				}
 
 				// Flag 'picking' should be set to 1. When set to 0, curves and surfaces will be polygonalized.
