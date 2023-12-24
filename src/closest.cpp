@@ -177,14 +177,6 @@ void closest::CreateInstanceData(RixContext& ctx,
 			GU_Detail *gdp = new GU_Detail;
 			if (gdp->load(filename.CStr()).success())
 			{
-				GA_PrimitiveGroup* grp = nullptr;
-
-				if (!primgroup.Empty())
-				{
-					grp = gdp->findPrimitiveGroup(primgroup.CStr());
-					if (!grp)
-						return;
-				}
 
 				// Attempt to unpack all Packeds, Alembics and USD
 				while (GU_PrimPacked::hasPackedPrimitives(*gdp))
@@ -196,7 +188,7 @@ void closest::CreateInstanceData(RixContext& ctx,
 							const GU_PrimPacked* packed = UTverify_cast<const GU_PrimPacked*>(gdp->getPrimitive(*it));
 							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("usdFrame"), frame);
 							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("abcframe"), frame/fps);
-							
+
 							GU_Detail dest;
 							packed->unpackUsingPolygons(dest);
 
@@ -205,6 +197,14 @@ void closest::CreateInstanceData(RixContext& ctx,
 							gdp->mergePrimitives(dest, dest.getPrimitiveRange());
 						}
 					}
+				}
+
+				GA_PrimitiveGroup* grp = nullptr;
+				if (!primgroup.Empty())
+				{
+					grp = gdp->findPrimitiveGroup(primgroup.CStr());
+					if (!grp)
+						return;
 				}
 
 				// Flag 'picking' should be set to 1. When set to 0, curves and surfaces will be polygonalized.

@@ -4,6 +4,7 @@
 #include "hGeoStructsRIS.h"
 
 #include <GU/GU_Detail.h>
+#include <GU/GU_PrimPacked.h>
 #include <GEO/GEO_PointTree.h>
 
 #include <map>
@@ -20,8 +21,11 @@ public:
 
 		// inputs
 		k_filename,
+		k_pointgroup,
 		k_numPoints,
 		k_coordsys,
+		k_frame,
+		k_fps,
 
 		// end of list
 		k_numParams
@@ -111,8 +115,11 @@ samplePoints::GetParamTable()
 
 		// inputs
 		RixSCParamInfo(RtUString("filename"), k_RixSCString),
+		RixSCParamInfo(RtUString("pointgroup"), k_RixSCString),
 		RixSCParamInfo(RtUString("numPoints"), k_RixSCInteger),
 		RixSCParamInfo(RtUString("coordsys"), k_RixSCString),
+		RixSCParamInfo(RtUString("frame"), k_RixSCFloat),
+		RixSCParamInfo(RtUString("fps"), k_RixSCFloat),
 
 		// end of table
 		RixSCParamInfo()
@@ -137,6 +144,9 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	RtUString filename = US_NULL;
 	params->EvalParam(k_filename, -1, &filename);
 
+	RtUString pointgroup = US_NULL;
+	params->EvalParam(k_pointgroup, -1, &pointgroup);
+
 	data->numPoints = 1;
 	params->EvalParam(k_numPoints, -1, &data->numPoints);
 
@@ -145,23 +155,60 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	if (data->coordsys.Empty())
 		data->coordsys = Rix::k_object;
 
-	// std::cout << data->coordsys.CStr() << std::endl;
+	float frame = 0;
+	float fps =0;
+	params->EvalParam(k_frame, -1, &frame);
+	params->EvalParam(k_fps, -1, &fps);
 
 	data->gdp = nullptr;
 	data->tree = nullptr;
 
 	if (!filename.Empty())
 	{
-		auto it = m_trees.find(filename);
+		char buff[255];
+		sprintf(buff, "%s:%s:%g", filename.CStr(), pointgroup.CStr(), frame*fps);
+		RtUString key(buff);
+
+		auto it = m_trees.find(key);
 
 		if (it == m_trees.end())
 		{
 			GU_Detail * gdp = new GU_Detail;
 			if (gdp->load(filename.CStr()).success())
 			{
+
+				// Attempt to unpack all Packeds, Alembics and USD
+				while (GU_PrimPacked::hasPackedPrimitives(*gdp))
+				{
+					for (GA_Iterator it(gdp->getPrimitiveRange()); !it.atEnd(); ++it)
+					{
+						if(GU_PrimPacked::isPackedPrimitive(gdp->getPrimitive(*it)->getTypeDef()))
+						{
+							const GU_PrimPacked* packed = UTverify_cast<const GU_PrimPacked*>(gdp->getPrimitive(*it));
+							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("usdFrame"), frame);
+							gdp->getPrimitive(*it)->setIntrinsic(packed->findIntrinsic("abcframe"), frame/fps);
+
+							GU_Detail dest;
+							packed->unpackUsingPolygons(dest);
+
+							// replace packed with poly version
+							gdp->destroyPrimitive(*gdp->getPrimitive(*it), true); // assume it's safe to delete prim while iterating
+							gdp->mergePrimitives(dest, dest.getPrimitiveRange());
+						}
+					}
+				}
+
+				GA_PointGroup* grp = nullptr;
+				if (!pointgroup.Empty())
+				{
+					grp = gdp->findPointGroup(pointgroup.CStr());
+					if (!grp)
+						return;
+				}
+
 				GEO_PointTreeGAOffset *tree = new GEO_PointTreeGAOffset;
-				tree->build(gdp);
-				m_trees[filename] = std::pair<GU_Detail*,GEO_PointTreeGAOffset*>(gdp, tree);
+				tree->build(gdp, grp);
+				m_trees[key] = std::pair<GU_Detail*,GEO_PointTreeGAOffset*>(gdp, tree);
 				data->gdp = gdp;
 				data->tree = tree;
 				// std::cout << "Loaded "<< gdp->getNumPoints() << " points: " << filename.CStr() << " " << tree->getMemoryUsage(true) << std::endl;
