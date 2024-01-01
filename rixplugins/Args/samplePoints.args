@@ -13,6 +13,13 @@
         <help>Geometry Filename</help>
     </param>
 
+    <param name="pointgroup"
+        label="Point Group"
+        type="string"
+        connectable="False">
+        <help>Point Group to search</help>
+    </param>
+
     <param name="numPoints"
         label="Number of Points"
         type="int"
@@ -32,6 +39,22 @@
         options="object|world"
         editable="True"
         houdiniui="oplist">
+    </param>
+
+    <param name="frame"
+        label="Frame"
+        type="float"
+        connectable="False"
+        default="0">
+        <help>Frame to Sample Geometry (For Alembic and USD)</help>
+    </param>
+
+    <param name="fps"
+        label="FPS"
+        type="float"
+        connectable="False"
+        default="24">
+        <help>Frames per Second (For Alembic)</help>
     </param>
 
     <output name="IdxA"

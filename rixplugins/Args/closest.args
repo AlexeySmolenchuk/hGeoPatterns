@@ -48,6 +48,22 @@
         houdiniui = "oplist">
     </param>
 
+    <param name="frame"
+        label="Frame"
+        type="float"
+        connectable="False"
+        default="0">
+        <help>Frame to Sample Geometry (For Alembic and USD)</help>
+    </param>
+
+    <param name="fps"
+        label="FPS"
+        type="float"
+        connectable="False"
+        default="24">
+        <help>Frames per Second (For Alembic)</help>
+    </param>
+
     <output name="ClosestData"
         type="struct"
         struct_name="ClosestData">
