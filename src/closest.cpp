@@ -6,6 +6,8 @@
 #include <GU/GU_Detail.h>
 #include <GU/GU_RayIntersect.h>
 #include <GU/GU_PrimPacked.h>
+#include <GEO/GEO_Detail.h>
+#include <GEO/GEO_ConvertParms.h>
 
 #include <map>
 #include <iostream>
@@ -178,7 +180,7 @@ void closest::CreateInstanceData(RixContext& ctx,
 			if (gdp->load(filename.CStr()).success())
 			{
 
-				// Attempt to unpack all Packeds, Alembics and USD
+				// Attempt to unpack all Packeds, Alembics and USDs
 				while (GU_PrimPacked::hasPackedPrimitives(*gdp))
 				{
 					for (GA_Iterator it(gdp->getPrimitiveRange()); !it.atEnd(); ++it)
@@ -198,6 +200,11 @@ void closest::CreateInstanceData(RixContext& ctx,
 						}
 					}
 				}
+
+				// convert PolySoups to regular PrimPolys
+				GEO_ConvertParms convertParams;
+				convertParams.setFromType(GEO_PrimTypeCompat::GEOPRIMPOLYSOUP);
+				gdp->convert(convertParams);
 
 				GA_PrimitiveGroup* grp = nullptr;
 				if (!primgroup.Empty())
