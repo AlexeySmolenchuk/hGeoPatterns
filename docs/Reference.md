@@ -8,10 +8,10 @@ Allows you to read data from any Houdini known geometry directly. This could be 
 ## Point Cloud Specific
 ![network_example](network_example_pc.png)
 
-#### SamplePoints
+### SamplePoints
 Allows you to sample the closest points from the file and store their sorted indexes and distances in the **ArrayData** structure for further reading. Similar to **pcopen**/**nearpoints** vex functions.
 
-#### ReadAttribute
+### ReadAttribute
 Read specified point attributes from **ArrayData** structure indexes.
 An empty filename means using the same file.
 <br/>
@@ -19,10 +19,10 @@ An empty filename means using the same file.
 ## Closest Point Specific
 ![network_example](network_example.png)
 
-#### Closest
+### Closest
 The plugin is similar to the **xyzdist** vex function. It allows you to find the closest point on the surface/spline and store it in the **ClosestData** structure for further reading.
 
-#### Interpolator
+### Interpolator
 Read interpolated attribute value from geometry at point matching the **ClosestData** structure. Similar to the **prim_attribute** vex function.
 An empty filename means using the same file.
 <br/><br/>
@@ -32,23 +32,23 @@ An empty filename means using the same file.
 OSL shaders here are very simple examples demonstrating how you can manipulate results from samplers to build procedural effects.
 
 ![network_example](network_example_tex.png)
-#### BuildCoords
+### BuildCoords
 Utility shader for building array of uv's from point-cloud-like data.
 
-#### SampleTexture
+### SampleTexture
 Utility shader for batch reading textures from an array of uv's.
 <br/><br/>
 
 # Utility Nodes *:star:*
 ![network_example](utilityNodes.png)
 
-#### UnpackArrayData
+### UnpackArrayData
 Utility node to direct access to ArrayData structure members.
-#### UnpackClosestData
+### UnpackClosestData
 Utility node to direct access to ClosestData structure members.
-#### UnpackManifold
+### UnpackManifold
 Utility node to direct access to RenderMan Manifold structure members.
-#### PackManifold
+### PackManifold
 Utility node to define RenderMan compatible Manifold.
 <br/><br/>
 
