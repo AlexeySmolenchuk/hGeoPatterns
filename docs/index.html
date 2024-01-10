@@ -1,15 +1,39 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>html{
-    font-size: 18px;
-    background: rgb(18, 18, 18);
-    color: rgb(128, 128, 128);
-    font-family: monospace, monospace;
-    max-width: 528px;
-    margin: auto;}
-    h1{margin-top: 1em;}
-    p{padding-bottom:2em;}
+<style>
+    html{
+        font-size: 18px;
+        background: rgb(18, 18, 18);
+        color: rgb(128, 128, 128);
+        font-family: monospace, monospace;
+        max-width: 512px;
+        margin: auto;}
+    body{
+        padding: 0;
+        margin: 0;}
+    h1{
+        margin: 0.2em;
+        margin-top: 1em;}
+    p{
+        margin: 0.5em;
+        padding-bottom:2em;}
+    video{
+        max-height: 100%;
+        width: 100%;}
+    .btn {
+        -webkit-appearance: button;
+        -moz-appearance: button;
+        appearance: button;
+        font-size: 18px;
+        border-radius: 5px;
+        display: block;
+        padding: 6px 0px;
+        text-decoration: none;
+        text-align: center;
+        background-color: rgb(128, 128, 128);
+        color: rgb(18, 18, 18);
+        width: 100%;}
 </style>
 
 <title>hGeoPatterns</title>
@@ -24,40 +48,81 @@
 <p>Collection of RenderMan plugins for sampling Houdini geometry.</p>
 
 
-<video autoplay loop muted playsinline preload="metadata" width="100%">
+<p>
+    > All examples in .hiplc format.<br/>
+    > Pre-built binaries for Windows and Linux.<br/>
+    > Some examples demonstrate auto-baking setup for interactive update. Others require manual bake.<br/><br/>
+
+    <a target="_blank" href="https://github.com/AlexeySmolenchuk/hGeoPatterns/releases/download/v1.1/hGeoPatterns1.1_win_H19.5_R25.2.zip" class="btn">Download Latest</a>
+    <br>
+    <a target="_blank" href="https://github.com/AlexeySmolenchuk/hGeoPatterns/releases/download/v1.1/hGeoPatternsExamples.zip" class="btn">Download Examples</a>
+    <br>
+    <a href="https://t.me/hGeoPatterns" style="color:rgb(150, 150, 150); text-decoration: none;">
+        <img src="https://assets-global.website-files.com/61fe1678647f8b5cb635ec64/62365cabf89c2b680ae1b224_telegram.svg" style="filter: invert() saturate(0); float:right; float:top">
+        <br>
+        Join Telegram group
+    </a>
+</p>
+
+<video autoplay loop muted playsinline preload="metadata">
     <source src="https://github.com/AlexeySmolenchuk/hGeoPatterns/assets/1741589/98b96ce5-7b49-4d2f-a6fe-7a75f7bff142" type="video/mp4">
 </video>
 <p>PxrSurface interior extinction driven by distance to curves.</p>
 
 
-<video autoplay loop muted playsinline preload="metadata" width="100%">
+<video loop muted playsinline preload="metadata">
     <source src="https://github.com/AlexeySmolenchuk/hGeoPatterns/assets/1741589/5b280b77-828e-45c0-862d-34fb530f721c" type="video/mp4">
 </video>
 <p>Displacement of inner surfaces and cutting edges based on the distance to the outside and inside geometry groups.</p>
 
 
-<video autoplay loop muted playsinline preload="metadata" width="100%">
+<video loop muted playsinline preload="metadata">
     <source src="https://github.com/AlexeySmolenchuk/hGeoPatterns/assets/1741589/6a46dc0f-61b3-45ec-a2d9-6e98832c30c6" type="video/mp4">
 </video>
 <p>Distance to the spline can be used as source of masks as well as parameter to construct uv coordinates along curves and cages.</p>
 
 
-<video autoplay loop muted playsinline preload="metadata" width="100%">
+<video loop muted playsinline preload="metadata">
     <source src="https://github.com/AlexeySmolenchuk/hGeoPatterns/assets/1741589/0343c2f5-5caf-4404-8793-0d4b060efc82" type="video/mp4">
 </video>
 <p>Normals blending based on proximity to another surface.</p>
 
 
-<video autoplay loop muted playsinline preload="metadata" width="100%">
+<video loop muted playsinline preload="metadata">
     <source src="https://github.com/AlexeySmolenchuk/hGeoPatterns/assets/1741589/413cf663-ea90-4cb7-b97d-0e5fa97246dd" type="video/mp4">
 </video>
 <p>Point cloud based texture bombing. Scattered points attributes like normals, directions, pscale can be used to build uv coordinates and manipulate scale, orientation and blending.</p>
 
 
-<video autoplay loop muted playsinline preload="metadata" width="100%">
+<video loop muted playsinline preload="metadata">
     <source src="https://github.com/AlexeySmolenchuk/hGeoPatterns/assets/1741589/fc54cb9c-1703-48a4-9b0a-912bc9b8f93e" type="video/mp4">
 </video>
 <p>Point cloud based texture bombing allows artistic control over parameters such as direction and scale.</p>
 
 
 <p>Thanks <a href="https://3dtextures.me" style="color:rgb(150, 150, 150);">3dtextures.me</a></p>
+
+<script>
+    var videos = document.getElementsByTagName("video"),
+    fraction = 0.8;
+    function playIfVisible() {
+        for(var i = 0; i < videos.length; i++) {
+            var video = videos[i];
+            var x = video.offsetLeft, y = video.offsetTop, w = video.offsetWidth, h = video.offsetHeight, r = x + w, //right
+
+            b = y + h, //bottom
+            visibleX, visibleY, visible;
+            visibleX = Math.max(0, Math.min(w, window.pageXOffset + window.innerWidth - x, r - window.pageXOffset));
+            visibleY = Math.max(0, Math.min(h, window.pageYOffset + window.innerHeight - y, b - window.pageYOffset));
+            visible = visibleX * visibleY / (w * h);
+            if (visible > fraction) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+    }
+
+    window.addEventListener('scroll', playIfVisible, false);
+    window.addEventListener('resize', playIfVisible, false);
+</script>
