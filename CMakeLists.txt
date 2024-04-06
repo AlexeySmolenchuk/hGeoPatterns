@@ -46,7 +46,8 @@ set (rixplugin_names
     samplePoints
     readAttribute
     closest
-    interpolator)
+    interpolator
+    sampleVolume)
 
 foreach (rixplugin_name ${rixplugin_names})
     add_library( ${rixplugin_name} SHARED src/${rixplugin_name}.cpp)
