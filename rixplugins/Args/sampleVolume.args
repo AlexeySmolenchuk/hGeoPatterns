@@ -1,0 +1,54 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Sample Volume Value in specified coordinates.
+    </help>
+
+    <param name="filename"
+        label="Filename Override"
+        type="string"
+        widget="fileInput"
+        connectable="False">
+        <help>Geometry Filename (bgeo or vdb)</help>
+    </param>
+
+    <param name="name"
+        label="Name"
+        type="string"
+        default="density"
+        connectable="False">
+        <help>Empty Name or "*" means Any primitive</help>
+    </param>
+
+    <param name="number"
+        label="Number"
+        type="int"
+        default="0"
+        connectable="False">
+    </param>
+
+    <param name="position"
+        label="Position"
+        type="color"
+        widget="null">
+    </param>
+
+    <param name="coordsys"
+        label="Coordinate System"
+        type="string"
+        default="object"
+        connectable="False"
+        widget="popup"
+        options="object|world"
+        editable="True"
+        houdiniui = "oplist">
+        <help>Modify coordinate system when Position is not connected</help>
+    </param>
+
+    <output name="Value"
+        type="color">
+    </output>
+
+</args>

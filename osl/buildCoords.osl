@@ -3,6 +3,7 @@
 vector build_coord_system(point pos, vector dir, normal n, point center, vector scale, float angle, float randomize){
     vector _u = normalize(dir);
     vector _v = normalize(cross(n, dir));
+    _u = normalize(cross(_v, n));
     vector coord = pos - center;
     coord = vector(dot(coord, _u), dot(coord, _v), 0);
 
