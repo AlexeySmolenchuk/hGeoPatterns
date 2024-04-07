@@ -29,7 +29,8 @@ An empty filename means using the same file.
 
 ## SampleVolume *:star:*
 ![network_example](sampleVolume.png)
-Volume Sampler for both VDB and Houdini Volumes. Allows you to read value from arbitrary point of specified field.
+
+Volume Sampler for both VDB and Houdini Volumes. Allows you to read values from arbitrary points of specified fields.
 <br/><br/>
 
 
