@@ -2,7 +2,7 @@
 
 # RIS Patterns / c++ plugins
 
-Allows you to read data from any Houdini known geometry directly. This could be PrimPoly, PolySoups, Curves as well as Packed primitives, AlembicRefs and UsdRefs from **.bgeo**, **.bgeo.sc** or any other format which Houdini can digest e.g. **.abc** or **.usd**.*:star:*
+Allows you to read data from any Houdini known geometry directly. This could be PrimPoly, PolySoups, Curves as well as Packed primitives, AlembicRefs and UsdRefs from **.bgeo**, **.bgeo.sc** or any other format which Houdini can digest e.g. **.abc** or **.usd**.
 
 
 ## Point Cloud Specific
@@ -25,6 +25,11 @@ The plugin is similar to the **xyzdist** vex function. It allows you to find the
 ### Interpolator
 Read interpolated attribute value from geometry at point matching the **ClosestData** structure. Similar to the **prim_attribute** vex function.
 An empty filename means using the same file.
+<br/>
+
+## SampleVolume *:star:*
+![network_example](sampleVolume.png)
+Volume Sampler for both VDB and Houdini Volumes. Allows you to read value from arbitrary point of specified field.
 <br/><br/>
 
 
@@ -39,7 +44,8 @@ Utility shader for building array of uv's from point-cloud-like data.
 Utility shader for batch reading textures from an array of uv's.
 <br/><br/>
 
-# Utility Nodes *:star:*
+
+# Utility Nodes
 ![network_example](utilityNodes.png)
 
 ### UnpackArrayData
