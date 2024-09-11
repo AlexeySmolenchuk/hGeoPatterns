@@ -7,7 +7,7 @@
     </help>
 
     <param name="filename"
-        label="Filename Override"
+        label="Filename"
         type="string"
         widget="fileInput"
         connectable="False">

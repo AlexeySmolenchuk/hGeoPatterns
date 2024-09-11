@@ -195,7 +195,7 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 	Data const* data = static_cast<Data const*>(instanceData);
 
 	GU_Detail *gdp;
-	GA_Attribute *attribute;
+	GA_Attribute *attribute = nullptr;
 
 	if (data->attribute)
 	{
@@ -233,7 +233,7 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 
 	if (!attribute)
 		return 1;
-	
+
 	RixSCType type;
 	RixSCConnectionInfo cinfo;
 	RixSCParamInfo const* paramTable = GetParamTable();
@@ -285,7 +285,7 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 			variable_num++;
 		}
 	}
-	
+
 	// as optimisation we pass pointer to loaded geometry to next reader
 	out[k_ValuesA_meshID].value = (RtInt*)gdp;
 
