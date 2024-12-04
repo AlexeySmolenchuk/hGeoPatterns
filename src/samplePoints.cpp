@@ -317,8 +317,6 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 	}
 	else
 	{
-		Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
-
 		// __Pref and Po are not defined for volumes
 		if (sCtx->scTraits.volume != NULL)
 		{
@@ -326,13 +324,15 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 		}
 		else
 		{
-			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
+			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
 			if (pDetail == k_RixSCInvalidDetail)
+			{
 				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+				Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+				memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+				sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
+			}
 		}
-
-		memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-		sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 	}
 
 	UT_Vector3 pos;

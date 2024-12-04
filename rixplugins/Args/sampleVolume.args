@@ -44,7 +44,7 @@
         options="object|world"
         editable="True"
         houdiniui = "oplist">
-        <help>Modify coordinate system when Position is not connected</help>
+        <help>Not Applicable for connected position and __Pref</help>
     </param>
 
     <output name="Value"

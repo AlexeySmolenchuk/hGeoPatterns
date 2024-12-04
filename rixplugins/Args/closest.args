@@ -52,6 +52,7 @@
         options="object|world"
         editable="True"
         houdiniui = "oplist">
+        <help>Not Applicable for connected position and __Pref</help>
     </param>
 
     <param name="frame"
