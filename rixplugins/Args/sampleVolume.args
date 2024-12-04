@@ -6,6 +6,12 @@
         Sample Volume Value in specified coordinates.
     </help>
 
+    <param name="position"
+        label="Position"
+        type="color"
+        widget="null">
+    </param>
+
     <param name="filename"
         label="Filename"
         type="string"
@@ -27,12 +33,6 @@
         type="int"
         default="0"
         connectable="False">
-    </param>
-
-    <param name="position"
-        label="Position"
-        type="color"
-        widget="null">
     </param>
 
     <param name="coordsys"

@@ -4,6 +4,7 @@
 #include "hGeoStructsRIS.h"
 
 #include <GU/GU_Detail.h>
+#include <GEO/GEO_Primitive.h>
 
 #include <map>
 #include <iostream>
@@ -15,7 +16,7 @@ public:
 	{
 		// outputs
 		k_value,
-		
+
 
 		// inputs
 		CLOSEST_DATA_IDS
@@ -168,7 +169,7 @@ void interpolator::CreateInstanceData(RixContext& ctx,
 	attrib = data->gdp->findVertexAttribute( attribName.CStr() );
 	if (!attrib) attrib = data->gdp->findPointAttribute( attribName.CStr() );
 	if (!attrib) attrib = data->gdp->findPrimitiveAttribute( attribName.CStr() );
-	
+
 	data->attribute = attrib;
 
 	return;
@@ -253,7 +254,7 @@ interpolator::ComputeOutputParams(RixShadingContext const *sCtx,
 			out[i].value = pool.AllocForPattern<RtColorRGB>(sCtx->numPts);
 		}
 	}
-	
+
 
 
 	RtColorRGB *result = (RtColorRGB*) out[k_value].value;

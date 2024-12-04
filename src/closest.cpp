@@ -22,6 +22,7 @@ public:
 		k_dist,
 
 		// inputs
+		k_position,
 		k_filename,
 		k_primgroup,
 		k_maxdist,
@@ -116,6 +117,7 @@ closest::GetParamTable()
 		RixSCParamInfo(RtUString("dist"), k_RixSCFloat, k_RixSCOutput),
 
 		// inputs
+		RixSCParamInfo(RtUString("position"), k_RixSCColor),
 		RixSCParamInfo(RtUString("filename"), k_RixSCString),
 		RixSCParamInfo(RtUString("primgroup"), k_RixSCString),
 		RixSCParamInfo(RtUString("maxdist"), k_RixSCFloat),
@@ -302,23 +304,34 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 	RtFloat *dist = (RtFloat*) out[k_dist].value;
 
 	RtFloat3 const *P;
-	RtFloat3 *Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+	RtFloat3 *Pw;
+	RtVector3 temp(0,0,0);
 
-	// __Pref and Po are not defined for volumes
-	if (sCtx->scTraits.volume != NULL)
+	sCtx->GetParamInfo(k_position, &type, &cinfo);
+	if (cinfo == k_RixSCNetworkValue)
 	{
-		sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+		sCtx->EvalParam(k_position, -1, &P, &temp, true);
+		Pw = (RtFloat3*)P;
 	}
 	else
 	{
-		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
-		if (pDetail == k_RixSCInvalidDetail)
-			sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+		Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+
+		// __Pref and Po are not defined for volumes
+		if (sCtx->scTraits.volume != NULL)
+		{
+			sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+		}
+		else
+		{
+			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
+			if (pDetail == k_RixSCInvalidDetail)
+				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+		}
+
+		memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+		sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 	}
-
-	memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-
-	sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 
 	UT_Vector3 pos;
 
