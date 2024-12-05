@@ -73,6 +73,7 @@ public:
 private:
 	std::unordered_map<RtUString, GU_Detail*> m_geo;
 	std::unordered_map<RtInt64, GA_Attribute*> m_attributes;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -81,6 +82,9 @@ readAttribute::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -151,10 +155,11 @@ void readAttribute::CreateInstanceData(RixContext& ctx,
 		{
 			m_geo[filename] = gdp;
 			data->gdp = gdp;
-			// std::cout << "Loaded: " << filename.CStr() << " " << gdp->getMemoryUsage(true) <<std::endl;
+			m_msg->Info("[hGeo::readAttribute] Loaded: %s %d (%s)", filename.CStr(), gdp->getMemoryUsage(true), handle.CStr() );
 		}
 		else
 		{
+			m_msg->Warning("[hGeo::readAttribute] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 			return;
 		}
 	}

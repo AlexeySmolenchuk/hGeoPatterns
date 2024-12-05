@@ -80,6 +80,7 @@ public:
 
 private:
 	std::unordered_map<RtUString, std::pair<GU_Detail*,GEO_PointTreeGAOffset*>> m_trees;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -88,6 +89,9 @@ samplePoints::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -213,8 +217,10 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 				m_trees[key] = std::pair<GU_Detail*,GEO_PointTreeGAOffset*>(gdp, tree);
 				data->gdp = gdp;
 				data->tree = tree;
-				// std::cout << "Loaded "<< gdp->getNumPoints() << " points: " << filename.CStr() << " " << tree->getMemoryUsage(true) << std::endl;
+				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %d (%s)", gdp->getNumPoints(), filename.CStr(), tree->getMemoryUsage(true), handle.CStr() );
 			}
+			else
+				m_msg->Warning("[hGeo::samplePoints] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 		}
 		else
 		{

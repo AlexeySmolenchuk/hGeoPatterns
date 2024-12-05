@@ -73,6 +73,7 @@ public:
 
 private:
 	std::unordered_map<RtUString, GU_Detail*> m_geo;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -81,6 +82,9 @@ sampleVolume::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -161,10 +165,11 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 		if (gdp->load(filename.CStr()).success())
 		{
 			m_geo[filename] = gdp;
-			// std::cout << "Loaded: " << filename.CStr() << " " << gdp->getMemoryUsage(true) <<std::endl;
+			m_msg->Info("[hGeo::sampleVolume] Loaded: %s %d (%s)", filename.CStr(), gdp->getMemoryUsage(true), handle.CStr() );
 		}
 		else
 		{
+			m_msg->Warning("[hGeo::sampleVolume] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 			return;
 		}
 	}
