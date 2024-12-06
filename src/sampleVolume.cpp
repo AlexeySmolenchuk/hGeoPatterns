@@ -148,8 +148,6 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
-	if (data->coordsys.Empty())
-		data->coordsys = Rix::k_object;
 
 	data->volume = nullptr;
 
