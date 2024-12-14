@@ -1,0 +1,82 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Sample ocean values from layered ocean spectra at the specified position and time.
+    </help>
+
+    <param name="filename"
+        label="Geometry File"
+        type="string"
+        widget="fileInput"
+        connectable="True">
+        <help>Geometry File</help>
+    </param>
+
+    <param name="maskname"
+        label="Mask Geometry File"
+        type="string"
+        widget="fileInput"
+        connectable="True">
+        <help>Mask Geometry File</help>
+    </param>
+
+    <param name="time"
+        label="Time"
+        type="float"
+        >
+    </param>
+
+    <param name="samplepos"
+        label="Sample Position"
+        type="point"
+        >
+    </param>
+
+    <param name="aablur"
+        label="Anti-Alias Blur"
+        type="float"
+        default="1"
+        >
+    </param>
+
+    <param name="falloffmode"
+        label="Depth Falloff"
+        type="int"
+        default="0"
+        connectable="True">
+    </param>
+
+    <param name="falloffscale"
+        label="Falloff Scale"
+        type="float"
+        default="1"
+        >
+    </param>
+
+    <param name="downsample"
+        label="Downsample"
+        type="int"
+        default="0"
+        connectable="True">
+    </param>
+
+
+    <output name="displacement"
+        type="vector">
+    </output>
+
+    <output name="velocity"
+        type="vector">
+    </output>
+
+    <output name="cusp"
+        type="float">
+    </output>
+
+    <output name="cuspdir"
+        type="vector">
+    </output>
+
+</args>

@@ -1,0 +1,33 @@
+//Simple wrapper for oceanSampleLayers function
+
+#include <ocean.h>
+
+cvex
+oceanSampleLayers(
+	const string    filename = "";
+	const string    maskname = "";
+	const float     time = 0.0;
+	const vector    samplepos = 0;
+	const float     aablur = 1.0;
+	const int       falloffmode = 0;
+	const float     falloffscale = 1.0;
+	const int       downsample = 0;
+	export vector    displacement = 0;
+	export vector    velocity = 0;
+	export float     cusp = 0;
+	export vector    cuspdir = 0;
+)
+{
+	oceanSampleLayers(  filename,
+						maskname,
+						time,
+						samplepos,
+						aablur,
+						falloffmode,
+						falloffscale,
+						downsample,
+						displacement,
+						velocity,
+						cusp,
+						cuspdir);
+}

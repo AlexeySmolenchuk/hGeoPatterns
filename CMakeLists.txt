@@ -4,10 +4,10 @@ project(hGeoPatterns VERSION 1.1)
 # Please update variables for your OS
 if (MSVC)
     # WINDOWS
-    SET(HFS "C:/Program Files/Side Effects Software/Houdini 19.5.605" CACHE PATH "Houdini Installation Folder")
-    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-25.2" CACHE PATH "RendermanProServer Installation Folder")
-    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-25.2" CACHE PATH "RendermanForHoudini Installation Folder")
-else()
+    SET(HFS "C:/Program Files/Side Effects Software/Houdini 20.5.410" CACHE PATH "Houdini Installation Folder")
+    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-26.2" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-26.2" CACHE PATH "RendermanForHoudini Installation Folder")
+    else()
     # LINUX
     SET(HFS "/opt/hfs19.0.589" CACHE PATH "Houdini Installation Folder")
     SET(RMANTREE "/opt/pixar/RenderManProServer-24.4" CACHE PATH "RendermanProServer Installation Folder")
@@ -23,8 +23,6 @@ endif ()
 find_package(Houdini REQUIRED
     PATHS ${HFS}/toolkit/cmake)
 
-# Houdini and RFH can setup PYTHONPATH for us (Windows only)
-set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
@@ -47,7 +45,9 @@ set (rixplugin_names
     readAttribute
     closest
     interpolator
-    sampleVolume)
+    sampleVolume
+    oceanSampleLayers
+    )
 
 foreach (rixplugin_name ${rixplugin_names})
     add_library( ${rixplugin_name} SHARED src/${rixplugin_name}.cpp)
@@ -87,7 +87,10 @@ add_custom_target(OSL
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/otls)
 if (MSVC)
     add_custom_command(
-        COMMAND  ${CMAKE_COMMAND} -E env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
+        COMMAND  ${CMAKE_COMMAND} -E env
+        RMANTREE=${RMANTREE}
+        RFHTREE=${RFHTREE}
+        HOUDINI_PACKAGE_DIR=${PROJECT_SOURCE_DIR}/python
             ${HFS}/bin/hython
             ${PROJECT_SOURCE_DIR}/python/build_hda.py
             ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
