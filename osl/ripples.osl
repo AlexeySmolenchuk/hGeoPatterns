@@ -16,6 +16,7 @@ float ripple(float dist, float age, float life, float speed, float frequency){
 }
 
 shader ripples(
+    point position = 0,
     ArrayData Pos = {},
     ArrayData Age = {},
     float life = 25.0,
@@ -24,15 +25,14 @@ shader ripples(
     output float out = 0,
 )
 {
-    point Pw = transform("world", P);
     int n=Pos.num;
 
-             out += ripple(distance(Pos.v0, Pw), Age.v0.x, life, speed, frequency);
-    if (n>1) out += ripple(distance(Pos.v1, Pw), Age.v1.x, life, speed, frequency);
-    if (n>2) out += ripple(distance(Pos.v2, Pw), Age.v2.x, life, speed, frequency);
-    if (n>3) out += ripple(distance(Pos.v3, Pw), Age.v3.x, life, speed, frequency);
-    if (n>4) out += ripple(distance(Pos.v4, Pw), Age.v4.x, life, speed, frequency);
-    if (n>5) out += ripple(distance(Pos.v5, Pw), Age.v5.x, life, speed, frequency);
-    if (n>6) out += ripple(distance(Pos.v6, Pw), Age.v6.x, life, speed, frequency);
-    if (n>7) out += ripple(distance(Pos.v7, Pw), Age.v7.x, life, speed, frequency);
+             out += ripple(distance(Pos.v0, position), Age.v0.x, life, speed, frequency);
+    if (n>1) out += ripple(distance(Pos.v1, position), Age.v1.x, life, speed, frequency);
+    if (n>2) out += ripple(distance(Pos.v2, position), Age.v2.x, life, speed, frequency);
+    if (n>3) out += ripple(distance(Pos.v3, position), Age.v3.x, life, speed, frequency);
+    if (n>4) out += ripple(distance(Pos.v4, position), Age.v4.x, life, speed, frequency);
+    if (n>5) out += ripple(distance(Pos.v5, position), Age.v5.x, life, speed, frequency);
+    if (n>6) out += ripple(distance(Pos.v6, position), Age.v6.x, life, speed, frequency);
+    if (n>7) out += ripple(distance(Pos.v7, position), Age.v7.x, life, speed, frequency);
 }
