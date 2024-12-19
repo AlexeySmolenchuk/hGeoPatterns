@@ -2,7 +2,7 @@
     "load_package_once": true,
     "env": [
         { "HGEOPATTERNS_PATH":  "${HOUDINI_PACKAGE_PATH}" },
-        { "RMAN_EXAMPLES_PATH": "C:/Pixar/PixarRenderMan-Examples-26.2" },
+        { "RMAN_EXAMPLES_PATH": "C:/Pixar/PixarRenderMan-Examples-26.3" },
 
         { "HOUDINI_PATH":       "${HGEOPATTERNS_PATH}" },
         { "RMAN_RIXPLUGINPATH": ["${HGEOPATTERNS_PATH}/rixplugins", "$RMANTREE/lib/plugins"] },

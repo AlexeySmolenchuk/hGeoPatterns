@@ -5,8 +5,8 @@ project(hGeoPatterns VERSION 1.1)
 if (MSVC)
     # WINDOWS
     SET(HFS "C:/Program Files/Side Effects Software/Houdini 20.5.410" CACHE PATH "Houdini Installation Folder")
-    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-26.2" CACHE PATH "RendermanProServer Installation Folder")
-    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-26.2" CACHE PATH "RendermanForHoudini Installation Folder")
+    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
     else()
     # LINUX
     SET(HFS "/opt/hfs19.0.589" CACHE PATH "Houdini Installation Folder")
