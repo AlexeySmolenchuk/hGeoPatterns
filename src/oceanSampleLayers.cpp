@@ -6,7 +6,7 @@
 #include <thread>
 #include <mutex>
 
-
+// Ideally we need mutex per instance data
 static std::mutex mutex;
 
 class oceanSampleLayers: public RixPattern
@@ -89,10 +89,8 @@ private:
 	const RtFloat	m_falloffscale	= 1.0;
 	const RtInt		m_downsample	= 0;
 
-	const char* m_programmName = "oceanSampleLayers";
+	const char* m_programName = "oceanSampleLayers";
 	RixMessages *m_msg {nullptr};
-
-
 };
 
 
@@ -127,8 +125,8 @@ oceanSampleLayers::Init(RixContext &ctx, RtUString const pluginpath)
 	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
 	if (!m_msg) return 1;
 
-	// Compiled VEX code is cached
-	CVEX_Context().clearAllFunctions();
+	// Compiled VEX code is cached. We can use this function for fresh reload.
+	// CVEX_Context().clearAllFunctions();
 
 	return 0;
 }
@@ -206,7 +204,7 @@ void oceanSampleLayers::CreateInstanceData(RixContext& ctx,
 	CVEX_Context cvex;
 
 	// Test Loading
-	if (cvex.load(1, &m_programmName))
+	if (cvex.load(1, &m_programName))
 		data->contexts = new std::unordered_map<std::thread::id,CVEX_Context*>;
 
 	if (cvex.getVexErrors().isstring())
@@ -239,27 +237,30 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 	std::thread::id id = std::this_thread::get_id();
 	auto it = contexts->find(id);
 
-	// Create and CVEX_Context per thread and reuse it
+	// Create CVEX_Context per thread and reuse it
 	if (it == contexts->end())
 	{
-			cvex = new CVEX_Context();
+		// We can execute CVEX_Context multiple times for different input data
+		cvex = new CVEX_Context();
 
-			cvex->addInput("filename", *data->filename);
-			cvex->addInput("maskname", *data->maskname);
+		// Uniform
+		cvex->addInput("filename", *data->filename);
+		cvex->addInput("maskname", *data->maskname);
 
-			cvex->addInput("time",			CVEX_TYPE_FLOAT,	true);
-			cvex->addInput("samplepos",		CVEX_TYPE_VECTOR3,	true);
-			cvex->addInput("aablur",		CVEX_TYPE_FLOAT,	true);
-			cvex->addInput("falloffmode",	CVEX_TYPE_INTEGER,	true);
-			cvex->addInput("falloffscale",	CVEX_TYPE_FLOAT,	true);
-			cvex->addInput("downsample",	CVEX_TYPE_INTEGER,	true);
+		// Varying
+		cvex->addInput("time",			CVEX_TYPE_FLOAT,	true);
+		cvex->addInput("samplepos",		CVEX_TYPE_VECTOR3,	true);
+		cvex->addInput("aablur",		CVEX_TYPE_FLOAT,	true);
+		cvex->addInput("falloffmode",	CVEX_TYPE_INTEGER,	true);
+		cvex->addInput("falloffscale",	CVEX_TYPE_FLOAT,	true);
+		cvex->addInput("downsample",	CVEX_TYPE_INTEGER,	true);
 
-			if (cvex->load(1, &m_programmName))
-			{
-				mutex.lock();
-				contexts->emplace(id, cvex);
-				mutex.unlock();
-			}
+		if (cvex->load(1, &m_programName))
+		{
+			mutex.lock();
+			contexts->emplace(id, cvex);
+			mutex.unlock();
+		}
 	}
 	else
 	{
@@ -277,7 +278,7 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 	OutputSpec *out = *outputs = pool.AllocForPattern<OutputSpec>(numOutputs);
 	*nOutputs = numOutputs;
 
-	// looping through the different output ids
+	// looping through the different output ids and allocate memory (even non connected)
 	for (int i = 0; i < numOutputs; ++i)
 	{
 		out[i].paramId = i;
@@ -292,13 +293,11 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 		{
 			out[i].detail = k_RixSCVarying;
 			out[i].value = pool.AllocForPattern<RtVector3>(sCtx->numPts);
-			memset((void*)out[i].value, 0, sizeof(RtVector3) * sCtx->numPts); // Temporary
 		}
 		if( type == k_RixSCFloat )
 		{
 			out[i].detail = k_RixSCVarying;
 			out[i].value = pool.AllocForPattern<RtFloat>(sCtx->numPts);
-			memset((void*)out[i].value, 0, sizeof(RtFloat) * sCtx->numPts); // Temporary
 		}
 	}
 
@@ -314,6 +313,7 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 	const RtFloat	*falloffscale;
 	const RtInt		*downsample;
 
+	// Map input parameters and promote to varying
 	sCtx->EvalParam(k_time, 		-1, &time,			&m_time,			true);
 	sCtx->EvalParam(k_samplepos, 	-1, &samplepos,		&m_samplepos,		true);
 	sCtx->EvalParam(k_aablur, 		-1, &aablur,		&m_aablur,			true);
@@ -322,6 +322,7 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 	sCtx->EvalParam(k_downsample, 	-1, &downsample,	&m_downsample,		true);
 
 
+	// Find Inputs/Outputs in VEX program
 	CVEX_Value *time_val		 = cvex->findInput("time",			CVEX_TYPE_FLOAT);
 	CVEX_Value *samplepos_val	 = cvex->findInput("samplepos",		CVEX_TYPE_VECTOR3);
 	CVEX_Value *aablur_val		 = cvex->findInput("aablur",		CVEX_TYPE_FLOAT);
@@ -335,6 +336,7 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 	CVEX_Value *cuspdir_val 	 = cvex->findOutput("cuspdir",		CVEX_TYPE_VECTOR3);
 
 
+	// Map RenderMan arrays to CVex context
 	time_val->setTypedData(			(float*)time,				sCtx->numPts);
 	samplepos_val->setTypedData(	(UT_Vector3*)samplepos,		sCtx->numPts);
 	aablur_val->setTypedData(		(float*)aablur,				sCtx->numPts);
@@ -347,6 +349,7 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 	cusp_val->setTypedData(			(float*)cusp,				sCtx->numPts);
 	cuspdir_val->setTypedData(		(UT_Vector3*)cuspdir,		sCtx->numPts);
 
+	// Execute
 	cvex->run(sCtx->numPts, false);
 
 	return 0;
