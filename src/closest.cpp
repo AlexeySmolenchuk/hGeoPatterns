@@ -222,7 +222,16 @@ void closest::CreateInstanceData(RixContext& ctx,
 				GU_RayIntersect *isect = new GU_RayIntersect(gdp, grp, 1, 0, 1);
 				m_isect[key] = isect;
 				data->isect = isect;
-				m_msg->Info("[hGeo::closest] Loaded: %s %d (%s)", filename.CStr(), isect->getMemoryUsage(true), handle.CStr() );
+
+				float mem = isect->getMemoryUsage(true);
+				int idx = 0;
+				while(mem>=1024)
+				{
+					mem /= 1024.0;
+					idx++;
+				}
+				constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+				m_msg->Info("[hGeo::closest] Loaded: %s %.1f %s (%s)", filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 			}
 			else
 				m_msg->Warning("[hGeo::closest] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );

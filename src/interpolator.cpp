@@ -157,7 +157,16 @@ void interpolator::CreateInstanceData(RixContext& ctx,
 		{
 			m_geo[filename] = gdp;
 			data->gdp = gdp;
-			m_msg->Info("[hGeo::interpolator] Loaded: %s %d (%s)", filename.CStr(), gdp->getMemoryUsage(true), handle.CStr() );
+
+			float mem = gdp->getMemoryUsage(true);
+			int idx = 0;
+			while(mem>=1024)
+			{
+				mem /= 1024.0;
+				idx++;
+			}
+			constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+			m_msg->Info("[hGeo::interpolator] Loaded: %s %.1f %s (%s)", filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 		}
 		else
 		{

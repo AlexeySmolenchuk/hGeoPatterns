@@ -163,7 +163,16 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 		if (gdp->load(filename.CStr()).success())
 		{
 			m_geo[filename] = gdp;
-			m_msg->Info("[hGeo::sampleVolume] Loaded: %s %d (%s)", filename.CStr(), gdp->getMemoryUsage(true), handle.CStr() );
+
+			float mem = gdp->getMemoryUsage(true);
+			int idx = 0;
+			while(mem>=1024)
+			{
+				mem /= 1024.0;
+				idx++;
+			}
+			constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+			m_msg->Info("[hGeo::sampleVolume] Loaded: %s %.1f %s (%s)", filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 		}
 		else
 		{
