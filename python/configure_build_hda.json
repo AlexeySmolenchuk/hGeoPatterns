@@ -1,0 +1,43 @@
+{
+    "load_package_once": true,
+    "env": [
+        {
+            "RFH_HOUDINI_VERS" :
+            [
+                {"houdini_version<'21.0' and houdini_version>='20.5.445'": "20.5.445"},
+                {"houdini_version<'20.5.445' and houdini_version>='20.5.445'": "20.5.445"},
+                {"houdini_version<'20.5.445' and houdini_version>='20.5.410'": "20.5.410"},
+                {"houdini_version<'20.5.410' and houdini_version>='20.5.410'": "20.5.410"},
+                {"houdini_version<'20.5.410' and houdini_version>='20.5.278'": "20.5.278"},
+                {"houdini_version<'20.5.278' and houdini_version>='20.5.278'": "20.5.278"},
+                {"houdini_version<'20.5' and houdini_version>='20.0.896'": "20.0.896"},
+                {"houdini_version<'20.0.896' and houdini_version>='20.0.896'": "20.0.896"},
+                {"houdini_version<'20.0.896' and houdini_version>='20.0.751'": "20.0.751"},
+                {"houdini_version<'20.0.751' and houdini_version>='20.0.751'": "20.0.751"},
+                {"houdini_version<'20.0.751' and houdini_version>='20.0.724'": "20.0.724"},
+                {"houdini_version<'20.0.724' and houdini_version>='20.0.724'": "20.0.724"},
+                {"houdini_version<'20.0' and houdini_version>='19.5.805'": "19.5.805"},
+                {"houdini_version<'19.5.805' and houdini_version>='19.5.805'": "19.5.805"}
+            ]
+        },
+        {
+            "RFH_PY_VERS":
+            [
+                { "houdini_python=='python2'": "2.7" },
+                { "houdini_python=='python3' and houdini_version<'19.5'": "3.7" },
+                { "houdini_python=='python3.7'": "3.7" },
+                { "houdini_python=='python3.9'": "3.9" },
+                { "houdini_python=='python3.10'": "3.10" },
+                { "houdini_python=='python3.11'": "3.11" }
+            ]
+        },
+        {
+            "PYTHONPATH":
+            [
+                "${RMANTREE}/bin",
+                "${RMANTREE}/lib/python${RFH_PY_VERS}/Lib/site-packages",
+                "${RFHTREE}/${RFH_PY_VERS}/${RFH_HOUDINI_VERS}/python${RFH_PY_VERS}libs"
+            ]
+        }
+    ]
+}
