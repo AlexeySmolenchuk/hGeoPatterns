@@ -22,6 +22,7 @@ public:
 		k_dist,
 
 		// inputs
+		k_position,
 		k_filename,
 		k_primgroup,
 		k_maxdist,
@@ -81,6 +82,7 @@ public:
 
 private:
 	std::unordered_map<RtUString, GU_RayIntersect*> m_isect;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -89,6 +91,9 @@ closest::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -116,6 +121,7 @@ closest::GetParamTable()
 		RixSCParamInfo(RtUString("dist"), k_RixSCFloat, k_RixSCOutput),
 
 		// inputs
+		RixSCParamInfo(RtUString("position"), k_RixSCColor),
 		RixSCParamInfo(RtUString("filename"), k_RixSCString),
 		RixSCParamInfo(RtUString("primgroup"), k_RixSCString),
 		RixSCParamInfo(RtUString("maxdist"), k_RixSCFloat),
@@ -156,8 +162,6 @@ void closest::CreateInstanceData(RixContext& ctx,
 
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
-	if (data->coordsys.Empty())
-		data->coordsys = Rix::k_object;
 
 	float frame = 0;
 	float fps =0;
@@ -218,8 +222,19 @@ void closest::CreateInstanceData(RixContext& ctx,
 				GU_RayIntersect *isect = new GU_RayIntersect(gdp, grp, 1, 0, 1);
 				m_isect[key] = isect;
 				data->isect = isect;
-				// std::cout << "Loaded "<< gdp->getNumPoints() << " points: " << filename.CStr() << " " << isect->getMemoryUsage(true) << std::endl;
+
+				float mem = isect->getMemoryUsage(true);
+				int idx = 0;
+				while(mem>=1024)
+				{
+					mem /= 1024.0;
+					idx++;
+				}
+				constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+				m_msg->Info("[hGeo::closest] Loaded: %s %.1f %s (%s)", filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 			}
+			else
+				m_msg->Warning("[hGeo::closest] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 		}
 		else
 		{
@@ -302,23 +317,34 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 	RtFloat *dist = (RtFloat*) out[k_dist].value;
 
 	RtFloat3 const *P;
-	RtFloat3 *Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+	RtFloat3 *Pw;
+	RtVector3 temp(0,0,0);
 
-	// __Pref and Po are not defined for volumes
-	if (sCtx->scTraits.volume != NULL)
+	sCtx->GetParamInfo(k_position, &type, &cinfo);
+	if (cinfo == k_RixSCNetworkValue)
 	{
-		sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+		sCtx->EvalParam(k_position, -1, &P, &temp, true);
+		Pw = (RtFloat3*)P;
 	}
 	else
 	{
-		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
-		if (pDetail == k_RixSCInvalidDetail)
-			sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+		// __Pref and Po are not defined for volumes
+		if (sCtx->scTraits.volume != NULL)
+		{
+			sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+		}
+		else
+		{
+			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
+			if (pDetail == k_RixSCInvalidDetail)
+			{
+				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+				Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+				memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+				sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
+			}
+		}
 	}
-
-	memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-
-	sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 
 	UT_Vector3 pos;
 
