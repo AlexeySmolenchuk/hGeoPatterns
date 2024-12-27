@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0.0)
-project(hGeoPatterns VERSION 1.1)
+cmake_minimum_required(VERSION 3.5.0)
+project(hGeoPatterns VERSION 1.2)
 
 # Please update variables for your OS
 if (MSVC)

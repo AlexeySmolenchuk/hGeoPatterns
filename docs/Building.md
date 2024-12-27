@@ -4,8 +4,8 @@
 
 You need to have this software pre-installed:
 
-* **Houdini** - tested with 19.0 and 19.5
-* **RenderManProServer** - tested with 24.x and 25.x
+* **Houdini** - tested with many versions from 19.0 to 20.5
+* **RenderManProServer** - tested with 24.x, 25.x and 26.x
 * **RenderManForHoudini** - corresponding version
 * **PixarRenderMan-Examples** - not required but very handy to use with OSL Builder. Add manually to [*hGeoPatterns.json*](../hGeoPatterns.json#L5)
 * **CMake**
@@ -19,11 +19,9 @@ Assuming you have installed RFH the way it's accessible from **hython**. This re
 #### Windows
 * **MSVC** - [version recommendations by SideFX](https://www.sidefx.com/docs/hdk/_h_d_k__intro__getting_started.html#HDK_Intro_Compiling_Intro_Windows)
 
-You can install one of those:
-* **Visual Studio Community 2019** (free)
-* **Build Tools for Visual Studio 2019** - if you don't need IDE
-
-Can be downloaded from [here](https://visualstudio.microsoft.com/vs/older-downloads/#visual-studio-2019-and-other-products) or [here](https://my.visualstudio.com/Downloads?q=Visual%20Studio%202019).
+You can install one of these fo free:
+* **[Visual Studio Community 2022](https://visualstudio.microsoft.com/downloads/#visual-studio-community-2022)**
+* **[Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)** - if you don't need IDE
 
 #### Linux
 * **GCC** - [version recommendations by SideFX](https://www.sidefx.com/docs/hdk/_h_d_k__intro__getting_started.html#HDK_Intro_GettingStarted_Compiling)
