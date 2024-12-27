@@ -17,7 +17,7 @@
                 {"houdini_version<'20.0.751' and houdini_version>='20.0.724'": "20.0.724"},
                 {"houdini_version<'20.0.724' and houdini_version>='20.0.724'": "20.0.724"},
                 {"houdini_version<'20.0' and houdini_version>='19.5.805'": "19.5.805"},
-                {"houdini_version<'19.5.805' and houdini_version>='19.5.805'": "19.5.805"}
+                {"houdini_version<'19.5.805'": "19.5.805"}
             ]
         },
         {
@@ -35,6 +35,7 @@
             "PYTHONPATH":
             [
                 "${RMANTREE}/bin",
+                "${RMANTREE}/lib/python${RFH_PY_VERS}/site-packages",
                 "${RMANTREE}/lib/python${RFH_PY_VERS}/Lib/site-packages",
                 "${RFHTREE}/${RFH_PY_VERS}/${RFH_HOUDINI_VERS}/python${RFH_PY_VERS}libs"
             ]
