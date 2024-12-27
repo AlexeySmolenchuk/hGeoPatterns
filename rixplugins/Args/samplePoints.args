@@ -5,6 +5,13 @@
     <help>
         Point Cloud Search
     </help>
+
+    <param name="position"
+        label="Position"
+        type="color"
+        widget="null">
+    </param>
+
     <param name="filename"
         label="Filename"
         type="string"
@@ -39,6 +46,7 @@
         options="object|world"
         editable="True"
         houdiniui="oplist">
+        <help>Not Applicable for connected position and __Pref</help>
     </param>
 
     <param name="frame"

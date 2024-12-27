@@ -1,17 +1,17 @@
-cmake_minimum_required(VERSION 3.0.0)
-project(hGeoPatterns VERSION 1.1)
+cmake_minimum_required(VERSION 3.5.0)
+project(hGeoPatterns VERSION 1.2)
 
 # Please update variables for your OS
 if (MSVC)
     # WINDOWS
-    SET(HFS "C:/Program Files/Side Effects Software/Houdini 19.5.605" CACHE PATH "Houdini Installation Folder")
-    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-25.2" CACHE PATH "RendermanProServer Installation Folder")
-    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-25.2" CACHE PATH "RendermanForHoudini Installation Folder")
-else()
+    SET(HFS "C:/Program Files/Side Effects Software/Houdini 20.5.445" CACHE PATH "Houdini Installation Folder")
+    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
+    else()
     # LINUX
-    SET(HFS "/opt/hfs19.0.589" CACHE PATH "Houdini Installation Folder")
-    SET(RMANTREE "/opt/pixar/RenderManProServer-24.4" CACHE PATH "RendermanProServer Installation Folder")
-    SET(RFHTREE "/opt/pixar/RenderManForHoudini-24.4-py3" CACHE PATH "RendermanForHoudini Installation Folder")
+    SET(HFS "/opt/hfs20.5.445" CACHE PATH "Houdini Installation Folder")
+    SET(RMANTREE "/opt/pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "/opt/pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
 endif()
 
 # prevent attempt to build right in the project
@@ -23,18 +23,15 @@ endif ()
 find_package(Houdini REQUIRED
     PATHS ${HFS}/toolkit/cmake)
 
-# Houdini and RFH can setup PYTHONPATH for us (Windows only)
-set(HOUDINI_PACKAGE_DIR ${RFHTREE}/packages)
 
 include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
 add_definitions(-DNDEBUG)
 
-
+# RenderMan manual recommends not to explicitly link plugins to
+# prman libraries and left it unresolved on Linux platform
 if (MSVC)
     link_libraries(libprman libpxrcore libstats)
-else()
-    link_libraries(prman pxrcore stats)
 endif()
 
 # gather sources
@@ -47,7 +44,9 @@ set (rixplugin_names
     readAttribute
     closest
     interpolator
-    sampleVolume)
+    sampleVolume
+    oceanSampleLayers
+    )
 
 foreach (rixplugin_name ${rixplugin_names})
     add_library( ${rixplugin_name} SHARED src/${rixplugin_name}.cpp)
@@ -85,29 +84,19 @@ add_custom_target(OSL
 
 # create HDA
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/otls)
-if (MSVC)
-    add_custom_command(
-        COMMAND  ${CMAKE_COMMAND} -E env HOUDINI_PACKAGE_DIR=${HOUDINI_PACKAGE_DIR}
-            ${HFS}/bin/hython
-            ${PROJECT_SOURCE_DIR}/python/build_hda.py
-            ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
-            ${PROJECT_SOURCE_DIR}/rixplugins
-            ${PROJECT_SOURCE_DIR}/shaders
-        OUTPUT ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
-        DEPENDS ${args_files} ${shader_objs} ${PROJECT_SOURCE_DIR}/python/build_hda.py
-    )
-else()
-    add_custom_command(
-        COMMAND  ${CMAKE_COMMAND} -E env PATH="${HFS}/bin:$ENV{PATH}"
-            hython
-            ${PROJECT_SOURCE_DIR}/python/build_hda.py
-            ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
-            ${PROJECT_SOURCE_DIR}/rixplugins
-            ${PROJECT_SOURCE_DIR}/shaders
-        OUTPUT ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
-        DEPENDS ${args_files} ${shader_objs} ${PROJECT_SOURCE_DIR}/python/build_hda.py
-    )
-endif()
+add_custom_command(
+    COMMAND  ${CMAKE_COMMAND} -E env
+        RMANTREE=${RMANTREE}
+        RFHTREE=${RFHTREE}
+        HOUDINI_PACKAGE_DIR=${PROJECT_SOURCE_DIR}/python
+        ${HFS}/bin/hython
+        ${PROJECT_SOURCE_DIR}/python/build_hda.py
+        ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
+        ${PROJECT_SOURCE_DIR}/rixplugins
+        ${PROJECT_SOURCE_DIR}/shaders
+    OUTPUT ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
+    DEPENDS ${args_files} ${shader_objs} ${PROJECT_SOURCE_DIR}/python/build_hda.py
+)
 
 add_custom_target(HDA ALL
                 DEPENDS ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda

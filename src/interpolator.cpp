@@ -4,6 +4,7 @@
 #include "hGeoStructsRIS.h"
 
 #include <GU/GU_Detail.h>
+#include <GEO/GEO_Primitive.h>
 
 #include <map>
 #include <iostream>
@@ -15,7 +16,7 @@ public:
 	{
 		// outputs
 		k_value,
-		
+
 
 		// inputs
 		CLOSEST_DATA_IDS
@@ -74,6 +75,7 @@ public:
 private:
 	std::unordered_map<RtUString, GU_Detail*> m_geo;
 	std::unordered_map<RtInt64, GA_Attribute*> m_attributes;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -82,6 +84,9 @@ interpolator::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -152,10 +157,20 @@ void interpolator::CreateInstanceData(RixContext& ctx,
 		{
 			m_geo[filename] = gdp;
 			data->gdp = gdp;
-			// std::cout << "Loaded: " << filename.CStr() << " " << gdp->getMemoryUsage(true) <<std::endl;
+
+			float mem = gdp->getMemoryUsage(true);
+			int idx = 0;
+			while(mem>=1024)
+			{
+				mem /= 1024.0;
+				idx++;
+			}
+			constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+			m_msg->Info("[hGeo::interpolator] Loaded: %s %.1f %s (%s)", filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 		}
 		else
 		{
+			m_msg->Warning("[hGeo::interpolator] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 			return;
 		}
 	}
@@ -168,7 +183,7 @@ void interpolator::CreateInstanceData(RixContext& ctx,
 	attrib = data->gdp->findVertexAttribute( attribName.CStr() );
 	if (!attrib) attrib = data->gdp->findPointAttribute( attribName.CStr() );
 	if (!attrib) attrib = data->gdp->findPrimitiveAttribute( attribName.CStr() );
-	
+
 	data->attribute = attrib;
 
 	return;
@@ -253,7 +268,7 @@ interpolator::ComputeOutputParams(RixShadingContext const *sCtx,
 			out[i].value = pool.AllocForPattern<RtColorRGB>(sCtx->numPts);
 		}
 	}
-	
+
 
 
 	RtColorRGB *result = (RtColorRGB*) out[k_value].value;

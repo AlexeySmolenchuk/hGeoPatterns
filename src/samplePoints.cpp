@@ -20,6 +20,7 @@ public:
 		ARRAY_DATA_IDS(DistA)
 
 		// inputs
+		k_position,
 		k_filename,
 		k_pointgroup,
 		k_numPoints,
@@ -79,6 +80,7 @@ public:
 
 private:
 	std::unordered_map<RtUString, std::pair<GU_Detail*,GEO_PointTreeGAOffset*>> m_trees;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -87,6 +89,9 @@ samplePoints::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -114,6 +119,7 @@ samplePoints::GetParamTable()
 		ARRAY_DATA_OUT("DistA")
 
 		// inputs
+		RixSCParamInfo(RtUString("position"), k_RixSCColor),
 		RixSCParamInfo(RtUString("filename"), k_RixSCString),
 		RixSCParamInfo(RtUString("pointgroup"), k_RixSCString),
 		RixSCParamInfo(RtUString("numPoints"), k_RixSCInteger),
@@ -152,8 +158,6 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
-	if (data->coordsys.Empty())
-		data->coordsys = Rix::k_object;
 
 	float frame = 0;
 	float fps =0;
@@ -211,8 +215,19 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 				m_trees[key] = std::pair<GU_Detail*,GEO_PointTreeGAOffset*>(gdp, tree);
 				data->gdp = gdp;
 				data->tree = tree;
-				// std::cout << "Loaded "<< gdp->getNumPoints() << " points: " << filename.CStr() << " " << tree->getMemoryUsage(true) << std::endl;
+
+				float mem = gdp->getMemoryUsage(true);
+				int idx = 0;
+				while(mem>=1024)
+				{
+					mem /= 1024.0;
+					idx++;
+				}
+				constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %.1f %s (%s)", gdp->getNumPoints(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 			}
+			else
+				m_msg->Warning("[hGeo::samplePoints] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 		}
 		else
 		{
@@ -304,23 +319,35 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 	}
 
 	RtFloat3 const *P;
-	RtFloat3 *Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+	RtFloat3 *Pw;
+	RtVector3 temp(0,0,0);
 
-	// __Pref and Po are not defined for volumes
-	if (sCtx->scTraits.volume != NULL)
+	sCtx->GetParamInfo(k_position, &type, &cinfo);
+	if (cinfo == k_RixSCNetworkValue)
 	{
-		sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+		sCtx->EvalParam(k_position, -1, &P, &temp, true);
+		Pw = (RtFloat3*)P;
 	}
 	else
 	{
-		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
-		if (pDetail == k_RixSCInvalidDetail)
-			sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+		// __Pref and Po are not defined for volumes
+		if (sCtx->scTraits.volume != NULL)
+		{
+			sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+		}
+		else
+		{
+			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
+			if (pDetail == k_RixSCInvalidDetail)
+			{
+				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+				Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+				memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+				sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
+			}
+		}
 	}
 
-	memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-
-	sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 	UT_Vector3 pos;
 	GEO_PointTree::IdxArrayType plist;
 	UT_FloatArray distances;

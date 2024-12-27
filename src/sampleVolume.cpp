@@ -73,6 +73,7 @@ public:
 
 private:
 	std::unordered_map<RtUString, GU_Detail*> m_geo;
+	RixMessages *m_msg {nullptr};
 };
 
 
@@ -81,6 +82,9 @@ sampleVolume::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
+
+	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
+	if (!m_msg) return 1;
 
 	return 0;
 }
@@ -144,8 +148,6 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
-	if (data->coordsys.Empty())
-		data->coordsys = Rix::k_object;
 
 	data->volume = nullptr;
 
@@ -161,10 +163,20 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 		if (gdp->load(filename.CStr()).success())
 		{
 			m_geo[filename] = gdp;
-			// std::cout << "Loaded: " << filename.CStr() << " " << gdp->getMemoryUsage(true) <<std::endl;
+
+			float mem = gdp->getMemoryUsage(true);
+			int idx = 0;
+			while(mem>=1024)
+			{
+				mem /= 1024.0;
+				idx++;
+			}
+			constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
+			m_msg->Info("[hGeo::sampleVolume] Loaded: %s %.1f %s (%s)", filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 		}
 		else
 		{
+			m_msg->Warning("[hGeo::sampleVolume] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 			return;
 		}
 	}
@@ -260,8 +272,6 @@ sampleVolume::ComputeOutputParams(RixShadingContext const *sCtx,
 	}
 	else
 	{
-		Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
-
 		// __Pref and Po are not defined for volumes
 		if (sCtx->scTraits.volume != NULL)
 		{
@@ -269,13 +279,15 @@ sampleVolume::ComputeOutputParams(RixShadingContext const *sCtx,
 		}
 		else
 		{
-			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), &P);
+			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
 			if (pDetail == k_RixSCInvalidDetail)
+			{
 				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
+				Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+				memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+				sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
+			}
 		}
-
-		memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-		sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 	}
 
 	//TODO check GEO_VolumeSampler.h

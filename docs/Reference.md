@@ -4,6 +4,11 @@
 
 Allows you to read data from any Houdini known geometry directly. This could be PrimPoly, PolySoups, Curves as well as Packed primitives, AlembicRefs and UsdRefs from **.bgeo**, **.bgeo.sc** or any other format which Houdini can digest e.g. **.abc** or **.usd**.
 
+## oceanSampleLayers
+Essentially a wrapper over the VEX function of the same name called in special CVEX_Context. Due to batched execution of RenderMan shaders, the overhead is negligible.
+
+![oceanSampleLayers](oceanSampleLayers.png)
+<br/>
 
 ## Point Cloud Specific
 ![network_example](network_example_pc.png)
@@ -27,7 +32,7 @@ Read interpolated attribute value from geometry at point matching the **ClosestD
 An empty filename means using the same file.
 <br/>
 
-## SampleVolume *:star:*
+## SampleVolume
 ![network_example](sampleVolume.png)
 
 Volume Sampler for both VDB and Houdini Volumes. Allows you to read values from arbitrary points of specified fields.
