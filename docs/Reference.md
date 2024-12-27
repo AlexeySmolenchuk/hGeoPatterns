@@ -6,6 +6,7 @@ Allows you to read data from any Houdini known geometry directly. This could be 
 
 ## oceanSampleLayers
 Essentially a wrapper over the VEX function of the same name called in special CVEX_Context. Due to batched execution of RenderMan shaders, the overhead is negligible.
+
 ![oceanSampleLayers](oceanSampleLayers.png)
 <br/>
 
