@@ -6,7 +6,6 @@
 #include <GU/GU_PrimVolume.h>
 
 #include <map>
-#include <iostream>
 
 class sampleVolume: public RixPattern
 {

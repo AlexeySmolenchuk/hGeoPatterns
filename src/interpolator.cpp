@@ -7,7 +7,6 @@
 #include <GEO/GEO_Primitive.h>
 
 #include <map>
-#include <iostream>
 
 class interpolator: public RixPattern
 {

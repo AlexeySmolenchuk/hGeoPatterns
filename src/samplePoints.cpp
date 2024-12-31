@@ -6,9 +6,9 @@
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPacked.h>
 #include <GEO/GEO_PointTree.h>
+#include <GOP/GOP_Manager.h>
 
 #include <map>
-#include <iostream>
 
 class samplePoints: public RixPattern
 {
@@ -201,11 +201,11 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 						}
 					}
 				}
-
-				GA_PointGroup* grp = nullptr;
+				GOP_Manager group_manager;
+				const GA_PointGroup* grp = nullptr;
 				if (!pointgroup.Empty())
 				{
-					grp = gdp->findPointGroup(pointgroup.CStr());
+					grp = group_manager.parsePointGroups(pointgroup.CStr(), GOP_Manager::GroupCreator(gdp));
 					if (!grp)
 						return;
 				}
