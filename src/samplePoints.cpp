@@ -216,7 +216,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 				data->gdp = gdp;
 				data->tree = tree;
 
-				float mem = gdp->getMemoryUsage(true);
+				float mem = gdp->getMemoryUsage(true) + tree->getMemoryUsage(true);
 				int idx = 0;
 				while(mem>=1024)
 				{
@@ -224,7 +224,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 					idx++;
 				}
 				constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
-				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %.1f %s (%s)", gdp->getNumPoints(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
+				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %.1f %s (%s)", tree->entries(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 			}
 			else
 				m_msg->Warning("[hGeo::samplePoints] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
