@@ -6,9 +6,9 @@
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPacked.h>
 #include <GEO/GEO_PointTree.h>
+#include <GOP/GOP_Manager.h>
 
 #include <map>
-#include <iostream>
 
 class samplePoints: public RixPattern
 {
@@ -201,11 +201,11 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 						}
 					}
 				}
-
-				GA_PointGroup* grp = nullptr;
+				GOP_Manager group_manager;
+				const GA_PointGroup* grp = nullptr;
 				if (!pointgroup.Empty())
 				{
-					grp = gdp->findPointGroup(pointgroup.CStr());
+					grp = group_manager.parsePointGroups(pointgroup.CStr(), GOP_Manager::GroupCreator(gdp));
 					if (!grp)
 						return;
 				}
@@ -216,7 +216,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 				data->gdp = gdp;
 				data->tree = tree;
 
-				float mem = gdp->getMemoryUsage(true);
+				float mem = gdp->getMemoryUsage(true) + tree->getMemoryUsage(true);
 				int idx = 0;
 				while(mem>=1024)
 				{
@@ -224,7 +224,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 					idx++;
 				}
 				constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
-				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %.1f %s (%s)", gdp->getNumPoints(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
+				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %.1f %s (%s)", tree->entries(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 			}
 			else
 				m_msg->Warning("[hGeo::samplePoints] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );

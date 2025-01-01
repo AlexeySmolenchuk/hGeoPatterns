@@ -8,9 +8,9 @@
 #include <GU/GU_PrimPacked.h>
 #include <GEO/GEO_Detail.h>
 #include <GEO/GEO_ConvertParms.h>
+#include <GOP/GOP_Manager.h>
 
 #include <map>
-#include <iostream>
 
 class closest: public RixPattern
 {
@@ -210,10 +210,11 @@ void closest::CreateInstanceData(RixContext& ctx,
 				convertParams.setFromType(GEO_PrimTypeCompat::GEOPRIMPOLYSOUP);
 				gdp->convert(convertParams);
 
-				GA_PrimitiveGroup* grp = nullptr;
+				GOP_Manager group_manager;
+				const GA_PrimitiveGroup* grp = nullptr;
 				if (!primgroup.Empty())
 				{
-					grp = gdp->findPrimitiveGroup(primgroup.CStr());
+					grp = group_manager.parsePrimitiveGroups(primgroup.CStr(), GOP_Manager::GroupCreator(gdp));
 					if (!grp)
 						return;
 				}

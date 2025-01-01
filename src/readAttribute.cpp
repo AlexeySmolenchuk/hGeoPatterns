@@ -6,7 +6,6 @@
 #include <GU/GU_Detail.h>
 
 #include <map>
-#include <iostream>
 
 class readAttribute: public RixPattern
 {
