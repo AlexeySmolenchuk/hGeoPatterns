@@ -46,4 +46,40 @@ Add root directory of hGeoPatterns to **HOUDINI_PACKAGE_DIR** environment variab
 #### Option B
 Update the first variable in [*hGeoPatterns.json*](../hGeoPatterns.json#L4) with absolute path to plugin root folder and put it in your *$HOUDINI_USER_PREF_DIR/packages*
 
+
+## Other DCCs
+If you want to build this plugin to use in other DCCs, you need Houdini installed on your machine. You need to minimize the number of dependencies. By default linking plugins to the whole Houdini package causes tons of dependencies, even unnecessary ones, which can cause library clashes. My solution would be to link to the HoudiniGEO library directly and manually provide all required FLAGS. On Linux, it looks like this:
+
+```Cmake
+# Add these definitions to CMakeLists.txt
+include_directories(SYSTEM ${HFS}/toolkit/include )
+link_directories( ${HFS}/dsolib ${HFS}/custom/houdini/dsolib )
+link_libraries(HoudiniGEO HoudiniUT)
+add_definitions(-DSIZEOF_VOID_P=8 -D_USE_MATH_DEFINES -DSESI_LITTLE_ENDIAN -DAMD64 -DLINUX -DUSE_PTHREADS)
+
+# And comment this particular line
+foreach (rixplugin_name ${rixplugin_names})
+ add_library( ${rixplugin_name} SHARED src/${rixplugin_name}.cpp)
+#-> target_link_libraries( ${rixplugin_name} Houdini )
+ set_target_properties(${rixplugin_name} PROPERTIES
+ RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/rixplugins
+ LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/rixplugins
+ PREFIX "")
+endforeach ()
+```
+Build as described [here](#building)
+Setup following environments before running Katana:
+
+```sh
+# Where libHoudiniGEO.so lives
+export LD_LIBRARY_PATH=/opt/hfs20.5.445/dsolib
+export HGEOPATTERNS_PATH=/path/to/your/hGeoPatterns
+export RMAN_RIXPLUGINPATH=${HGEOPATTERNS_PATH}/rixplugins
+export RMAN_SHADERPATH=${HGEOPATTERNS_PATH}/shaders
+# This one is required for ocean shader
+export HOUDINI_VEX_PATH=${HGEOPATTERNS_PATH}/vex/CVex:'&'
+```
+Now all shaders must work as expected and read all sorts of geometry formats Houdini can open.
+Tested on Linux with Katana6.0 and a variety of Houdini[19.5-20.5] and RenderMan[25.0-26.3] combinations.
+
 [HOME](../Readme.md)
