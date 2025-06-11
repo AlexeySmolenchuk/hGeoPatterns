@@ -8,7 +8,7 @@
 #include <GEO/GEO_PointTree.h>
 #include <GOP/GOP_Manager.h>
 
-#include <map>
+#include <unordered_map>
 
 class samplePoints: public RixPattern
 {
@@ -160,7 +160,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
 
 	float frame = 0;
-	float fps =0;
+	float fps = 24;
 	params->EvalParam(k_frame, -1, &frame);
 	params->EvalParam(k_fps, -1, &fps);
 
