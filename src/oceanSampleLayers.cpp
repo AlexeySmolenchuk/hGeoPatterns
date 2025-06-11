@@ -1,13 +1,14 @@
-#include "RixPattern.h"
-#include "RixPredefinedStrings.hpp"
+#include <RixPattern.h>
+#include <RixInterfaces.h>
+#include <RixPredefinedStrings.hpp>
 
 #include <CVEX/CVEX_Context.h>
+#include <CVEX/CVEX_Value.h>
 
 #include <thread>
 #include <mutex>
+#include <unordered_map>
 
-// Ideally we need mutex per instance data
-static std::mutex mutex;
 
 class oceanSampleLayers: public RixPattern
 {
@@ -34,12 +35,18 @@ public:
 		k_numParams
 	};
 
+	struct ThreadData
+	{
+		CVEX_StringArray filename;
+		CVEX_StringArray maskname;
+		CVEX_Context cvex;
+	};
+
 	struct Data
 	{
 		static void Free(RtPointer dataPtr);
-		CVEX_StringArray *filename;
-		CVEX_StringArray *maskname;
-		std::unordered_map<std::thread::id,CVEX_Context*> *contexts;
+		std::mutex myMutex;
+		std::unordered_map<std::thread::id,ThreadData> threadData;
 	};
 
 	int Init(RixContext &ctx, RtUString const pluginpath) override;
@@ -97,22 +104,7 @@ private:
 void
 oceanSampleLayers::Data::Free(RtPointer dataPtr)
 {
-	Data* data = static_cast<Data*>(dataPtr);
-
-	if (data->filename)
-		delete data->filename;
-	if (data->maskname)
-		delete data->maskname;
-
-	if (data->contexts)
-	{
-		for (auto item: *data->contexts){
-			delete item.second;
-		}
-		delete(data->contexts);
-	}
-
-	free(data);
+	delete static_cast<Data*>(dataPtr);
 }
 
 
@@ -125,9 +117,10 @@ oceanSampleLayers::Init(RixContext &ctx, RtUString const pluginpath)
 	m_msg = (RixMessages*)ctx.GetRixInterface(k_RixMessages);
 	if (!m_msg) return 1;
 
+#ifndef NDEBUG
 	// Compiled VEX code is cached. We can use this function for fresh reload.
-	// CVEX_Context().clearAllFunctions();
-
+	CVEX_Context().clearAllFunctions();
+#endif
 	return 0;
 }
 
@@ -147,7 +140,7 @@ oceanSampleLayers::GetParamTable()
 		// outputs
 		RixSCParamInfo(RtUString("displacement"), 	k_RixSCVector, k_RixSCOutput),
 		RixSCParamInfo(RtUString("velocity"), 		k_RixSCVector, k_RixSCOutput),
-		RixSCParamInfo(RtUString("cusp"), 			k_RixSCFloat, k_RixSCOutput),
+		RixSCParamInfo(RtUString("cusp"), 			k_RixSCFloat,  k_RixSCOutput),
 		RixSCParamInfo(RtUString("cuspdir"), 		k_RixSCVector, k_RixSCOutput),
 
 		// inputs
@@ -175,42 +168,24 @@ void oceanSampleLayers::CreateInstanceData(RixContext& ctx,
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(handle);
 
-	instanceData->datalen = sizeof(Data);
-	instanceData->data = malloc(instanceData->datalen);
-	instanceData->freefunc = Data::Free;;
-	Data *data = static_cast<Data*>(instanceData->data);
+	instanceData->data = nullptr;
 
-	data->contexts = nullptr;
-	data->filename = nullptr;
-	data->maskname = nullptr;
-
-	RtUString filename("");
-	RtUString maskname("");
-
-	params->EvalParam(k_filename, -1, &filename);
-	params->EvalParam(k_maskname, -1, &maskname);
-
-	if (filename.Empty())
+	// Test Loading
+	CVEX_Context cvex;
+	
+	if (!cvex.load(1, &m_programName))
 	{
-		m_msg->Warning("[hGeo::oceanSampleLayers] Spectrum Filename is Empty (%s)", handle );
+		if (cvex.getVexErrors().isstring())
+			m_msg->Error((const char *)cvex.getVexErrors());
+		if (cvex.getVexWarnings().isstring())
+			m_msg->Warning((const char *)cvex.getVexWarnings());
+		// exit without creating Data
 		return;
 	}
 
-	// m_msg->Info("[hGeo::oceanSampleLayers] Using Spectrum File %s (%s)", filename, handle );
-
-	data->filename = new CVEX_StringArray{filename.CStr()};
-	data->maskname = new CVEX_StringArray{maskname.CStr()};
-
-	CVEX_Context cvex;
-
-	// Test Loading
-	if (cvex.load(1, &m_programName))
-		data->contexts = new std::unordered_map<std::thread::id,CVEX_Context*>;
-
-	if (cvex.getVexErrors().isstring())
-		m_msg->Error((const char *)cvex.getVexErrors());
-	if (cvex.getVexWarnings().isstring())
-		m_msg->Warning((const char *)cvex.getVexWarnings());
+	instanceData->datalen = sizeof(Data);
+	instanceData->data = new Data();
+	instanceData->freefunc = Data::Free;
 
 	return;
 }
@@ -228,25 +203,40 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 
 	Data *data = (Data*)instanceData;
 
-	if (data->contexts == nullptr)
+	if (!data)
 		return 1;
 
-	auto contexts = data->contexts;
 	CVEX_Context *cvex;
 
 	std::thread::id id = std::this_thread::get_id();
-	auto it = contexts->find(id);
+	auto it = data->threadData.find(id);
 
-	// Create CVEX_Context per thread and reuse it
-	if (it == contexts->end())
+	// We can execute CVEX_Context multiple times for different input data
+	if (it == data->threadData.end())
 	{
-		// We can execute CVEX_Context multiple times for different input data
-		cvex = new CVEX_Context();
+		data->myMutex.lock();
+		auto &ptd = data->threadData[id];
+		data->myMutex.unlock();
+
+		const RtUString *filename;
+		const RtUString *maskname;
+		
+		sCtx->EvalParam(k_filename, -1, &filename, &Rix::k_empty);
+		sCtx->EvalParam(k_maskname, -1, &maskname, &Rix::k_empty);
+
+		if (filename->Empty())
+			m_msg->Warning("[hGeo::oceanSampleLayers] Spectrum Filename is Empty");
+		else
+			m_msg->Info("[hGeo::oceanSampleLayers] Using Spectrum File %s", *filename);
+
+		ptd.filename.append(filename->CStr());
+		ptd.maskname.append(maskname->CStr());
+		
+		cvex = &ptd.cvex;
 
 		// Uniform
-		cvex->addInput("filename", *data->filename);
-		cvex->addInput("maskname", *data->maskname);
-
+		cvex->addInput("filename", ptd.filename);
+		cvex->addInput("maskname", ptd.maskname);
 		// Varying
 		cvex->addInput("time",			CVEX_TYPE_FLOAT,	true);
 		cvex->addInput("samplepos",		CVEX_TYPE_VECTOR3,	true);
@@ -255,16 +245,11 @@ oceanSampleLayers::ComputeOutputParams(RixShadingContext const *sCtx,
 		cvex->addInput("falloffscale",	CVEX_TYPE_FLOAT,	true);
 		cvex->addInput("downsample",	CVEX_TYPE_INTEGER,	true);
 
-		if (cvex->load(1, &m_programName))
-		{
-			mutex.lock();
-			contexts->emplace(id, cvex);
-			mutex.unlock();
-		}
+		cvex->load(1, &m_programName);
 	}
 	else
 	{
-		cvex = it->second;
+		cvex = &it->second.cvex;
 	}
 
 
