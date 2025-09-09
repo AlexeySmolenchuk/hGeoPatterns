@@ -1,23 +1,33 @@
 shader displacementLayer(
     point inP = 0,
+    normal inN = 0,
     float in = 0,
     float gain = 1,
 
     output point displacedP = 0,
-    output normal localN = 0,
+    output normal displacedN = 0,
     output vector dispVector = 0,
 )
 {
-    point Po;
-    getattribute("primvar", "P", Po);
+    // Always initialize local wariables to prevent NaNs
+    point Po = 0;
+    normal localN = 0;
     
+    getattribute("primvar", "P", Po);
     displacedP = Po;
 
     if (isconnected(inP))
         displacedP = inP;
 
-    localN = normalize(calculatenormal(displacedP));
+    if (isconnected(inN))
+        localN = inN;
+    else
+        getattribute("builtin", "Non", localN);
+    
+    localN = normalize(localN);
+
     displacedP += localN * in * gain;
 
     dispVector = displacedP - Po;
+    displacedN =  normalize(calculatenormal(displacedP));
 }
