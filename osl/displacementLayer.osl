@@ -1,0 +1,23 @@
+shader displacementLayer(
+    point inP = 0,
+    float in = 0,
+    float gain = 1,
+
+    output point displacedP = 0,
+    output normal localN = 0,
+    output vector dispVector = 0,
+)
+{
+    point Po;
+    getattribute("primvar", "P", Po);
+    
+    displacedP = Po;
+
+    if (isconnected(inP))
+        displacedP = inP;
+
+    localN = normalize(calculatenormal(displacedP));
+    displacedP += localN * in * gain;
+
+    dispVector = displacedP - Po;
+}
