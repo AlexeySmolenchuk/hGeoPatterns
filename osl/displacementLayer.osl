@@ -1,33 +1,46 @@
+struct Manifold{
+    point Q;
+    normal QN;
+    float Qradius;
+};
+
 shader displacementLayer(
-    point inP = 0,
-    normal inN = 0,
+    Manifold inLayer = {0},
     float in = 0,
     float gain = 1,
 
-    output point displacedP = 0,
+    output Manifold outLayer = {0},
     output normal displacedN = 0,
     output vector dispVector = 0,
 )
 {
-    // Always initialize local wariables to prevent NaNs
+    // Always initialize local variables to prevent NaNs
     point Po = 0;
+    point localP = 0;
     normal localN = 0;
     
     getattribute("primvar", "P", Po);
-    displacedP = Po;
+   
 
-    if (isconnected(inP))
-        displacedP = inP;
-
-    if (isconnected(inN))
-        localN = inN;
-    else
+    if (isconnected(inLayer)){
+        localP = inLayer.Q;
+        localN = inLayer.QN;
+    }else{
+        localP = Po;
         getattribute("builtin", "Non", localN);
-    
+    }
+
     localN = normalize(localN);
 
-    displacedP += localN * in * gain;
+    localP += localN * in * gain;
 
-    dispVector = displacedP - Po;
-    displacedN =  normalize(calculatenormal(displacedP));
+    dispVector = localP - Po;
+    displacedN =  normalize(calculatenormal(localP));
+
+    outLayer.Q = localP;
+    outLayer.QN = displacedN;
+
+    // The trick to make restored normals consistent
+    if (dot(displacedN, normalize(I)) > 0)
+        displacedN = reflect(displacedN, I); // intentionally swap N and I
 }
