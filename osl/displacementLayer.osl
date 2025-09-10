@@ -62,6 +62,7 @@ shader displacementLayer(
         string options = "Scalar R:0|Scalar G:1|Scalar B:2|Vector:3",
     ]],
     int mode = 0,  // Original direction / recalculated
+    Manifold textureManifold = {0},
 
     output Manifold outLayer = {0},
     output normal displacedN = 0,
@@ -97,8 +98,13 @@ shader displacementLayer(
         vector tangent = 0;
         vector bitangent = 0;
         
-        getattribute("primvar", "s", s);
-        getattribute("primvar", "t", t);
+        if (isconnected(textureManifold)){
+            s = textureManifold.Q.x;
+            t = 1 - textureManifold.Q.y;  // RenderMan default is invert T
+        }else{
+            getattribute("primvar", "s", s);
+            getattribute("primvar", "t", t);
+        }
 
         partialDeriv(localP, s, t, tangent, bitangent);
 
