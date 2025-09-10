@@ -4,6 +4,9 @@ struct Manifold{
     float Qradius;
 };
 
+// Seems prman calculates displacement and shading in different spaces
+// So perform all calculations and maintain "state" of
+// manifold layers in "object" space but output N in "common"
 shader displacementLayer(
     Manifold inLayer = {0},
     float in = 0,
@@ -19,27 +22,35 @@ shader displacementLayer(
     point Po = 0;
     point localP = 0;
     normal dispDirection = 0;
-    
+
     getattribute("primvar", "P", Po);
+    Po = transform("object", Po);
+
     localP = Po;
     if (isconnected(inLayer))
         localP = inLayer.Q;
 
     if (isconnected(inLayer) && mode)
         dispDirection = inLayer.QN;
-    else
+    else{
         getattribute("builtin", "Non", dispDirection);
+        dispDirection = transform("object", dispDirection);
+    }
 
     dispDirection = normalize(dispDirection);
     localP += dispDirection * in * gain;
 
     dispVector = localP - Po;
-    displacedN =  normalize(calculatenormal(localP));
+    displacedN = calculatenormal(localP);
 
     outLayer.Q = localP;
     outLayer.QN = displacedN;
 
+    displacedN = transform("object", "common", displacedN);
+
     // The trick to make restored normals consistent
-    if (dot(displacedN, normalize(I)) > 0)
-        displacedN = reflect(displacedN, I); // intentionally swap N and I
+    if ((dot(displacedN, I) > 0) && (dot(N, I) < 0))
+        displacedN = reflect(displacedN, I);  // Intentionally swap N and I
+
+    displacedN = normalize(displacedN);
 }
