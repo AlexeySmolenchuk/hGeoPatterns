@@ -8,6 +8,7 @@ shader displacementLayer(
     Manifold inLayer = {0},
     float in = 0,
     float gain = 1,
+    int mode = 0,  // Original direction / recalculated
 
     output Manifold outLayer = {0},
     output normal displacedN = 0,
@@ -17,22 +18,20 @@ shader displacementLayer(
     // Always initialize local variables to prevent NaNs
     point Po = 0;
     point localP = 0;
-    normal localN = 0;
+    normal dispDirection = 0;
     
     getattribute("primvar", "P", Po);
-   
-
-    if (isconnected(inLayer)){
+    localP = Po;
+    if (isconnected(inLayer))
         localP = inLayer.Q;
-        localN = inLayer.QN;
-    }else{
-        localP = Po;
-        getattribute("builtin", "Non", localN);
-    }
 
-    localN = normalize(localN);
+    if (isconnected(inLayer) && mode)
+        dispDirection = inLayer.QN;
+    else
+        getattribute("builtin", "Non", dispDirection);
 
-    localP += localN * in * gain;
+    dispDirection = normalize(dispDirection);
+    localP += dispDirection * in * gain;
 
     dispVector = localP - Po;
     displacedN =  normalize(calculatenormal(localP));
