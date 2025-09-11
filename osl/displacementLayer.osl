@@ -50,10 +50,14 @@ void partialDeriv(point Q, float a, float b,
 }
 
 
-// Seems prman calculates displacement and shading in different spaces
+// Seems RenderMan calculates displacement and shading in different spaces
 // So perform all calculations and maintain "state" of
 // manifold layers in "object" space but output N in "common"
 shader displacementLayer(
+    int active = 1  [[
+        string widget = "checkBox",
+        int connectable = 0,
+    ]],
     Manifold inLayer = {0},
     color input = 0,
     float gain = 1,
@@ -90,32 +94,34 @@ shader displacementLayer(
 
     localN = normalize(localN);
 
-    if (source < 3){
-        localP += localN * input[max(0, source)] * gain;
-    }else if (source==3){
-        float s = u;
-        float t = v;
-        vector tangent = 0;
-        vector bitangent = 0;
-        
-        if (isconnected(textureManifold)){
-            s = textureManifold.Q.x;
-            t = 1 - textureManifold.Q.y;  // RenderMan default is invert T
-        }else{
-            getattribute("primvar", "s", s);
-            getattribute("primvar", "t", t);
+    if (active>0){
+        if (source < 3){
+            localP += localN * input[max(0, source)] * gain;
+        }else if (source==3){
+            float s = u;
+            float t = v;
+            vector tangent = 0;
+            vector bitangent = 0;
+
+            if (isconnected(textureManifold)){
+                s = textureManifold.Q.x;
+                t = 1 - textureManifold.Q.y;  // RenderMan default is invert T
+            }else{
+                getattribute("primvar", "s", s);
+                getattribute("primvar", "t", t);
+            }
+
+            partialDeriv(localP, s, t, tangent, bitangent);
+
+            // The following mapping works well with EAR.exr from Arnold documentation
+            // https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
+            // https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
+            vector disp = normalize(tangent) * input.r
+                        + localN * input.g
+                        + normalize(bitangent) * input.b;
+
+            localP += disp * gain;
         }
-
-        partialDeriv(localP, s, t, tangent, bitangent);
-
-// The following mapping works well with EAR.exr from Arnold documentation
-// https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
-// https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
-        vector disp = normalize(tangent) * input.r
-                    + localN * input.g
-                    + normalize(bitangent) * input.b;
-        
-        localP += disp * gain;
     }
 
     dispVector = localP - Po;
