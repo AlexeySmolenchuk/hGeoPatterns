@@ -50,6 +50,37 @@ void partialDeriv(point Q, float a, float b,
 }
 
 
+// Modified quadratic polynomial functions from Inigo Quilez
+// https://iquilezles.org/articles/smin/
+void smin( float a, float b, float k, output float result, output float mask){
+    float h = 1.0 - min( abs(a-b)/(4.0*k), 1.0 );
+    float w = h*h;
+    float m = w*0.5;
+    float s = w*k;
+    if (a<b){
+        result = a-s;
+        mask = m;
+    }else{
+        result = b-s;
+        mask = 1.0-m;
+    }
+}
+
+void smax( float a, float b, float k, output float result, output float mask){
+    float h = 1.0 - min( abs(a-b)/(4.0*k), 1.0 );
+    float w = h*h;
+    float m = w*0.5;
+    float s = w*k;
+    if (a>b){
+        result = a+s;
+        mask = m;
+    }else{
+        result = b+s;
+        mask = 1.0-m;
+    }
+}
+
+
 // Seems RenderMan calculates displacement and shading in different spaces
 // So perform all calculations and maintain "state" of
 // manifold layers in "object" space but output N in "common"
@@ -72,12 +103,14 @@ shader displacementLayer(
     color input = 0,
     float gain = 1,
     float offset = 0,
+    float smoothness = 0,
     float mask = 1,
     Manifold textureManifold = {0},
 
     output Manifold outLayer = {0},
     output normal displacedN = 0,
     output vector dispVector = 0,
+    output float heightMask = 0,
 )
 {
     // Always initialize local variables to prevent NaNs
@@ -120,7 +153,7 @@ shader displacementLayer(
                 getattribute("primvar", "t", t);
             }
 
-            partialDeriv(localP, s, t, tangent, bitangent);
+            partialDeriv((mode==1) ? localP : Po, s, t, tangent, bitangent);
 
             if (source == 3){
                 // This straightforward mapping works fine with this library
@@ -155,10 +188,24 @@ shader displacementLayer(
             float incomingProjection = dot(localN, incoming);
             float dispProjection = dot(localN, disp);
 
-            if ((mode==3) && (incomingProjection > dispProjection))
-                displacedP = Po + disp;
-            else if ((mode==4) && (incomingProjection < dispProjection))
-                displacedP = Po + disp;
+            if (smoothness == 0){
+                if ((mode==3) && (incomingProjection > dispProjection))
+                    displacedP = Po + disp;
+                else if ((mode==4) && (incomingProjection < dispProjection))
+                    displacedP = Po + disp;
+
+                heightMask = (incomingProjection > dispProjection);
+            }else{
+                vector incomingTangential = incoming - localN * incomingProjection;
+                vector dispTangential = disp - localN * dispProjection;
+                float result = 0;
+                if (mode==3)
+                    smin(incomingProjection, dispProjection, smoothness, result, heightMask);
+                else if (mode==4)
+                    smax(incomingProjection, dispProjection, smoothness, result, heightMask);
+            
+                displacedP = Po + localN * result + mix(incomingTangential, dispTangential, heightMask);
+            }
         }
 
         localP = mix(localP, displacedP, mask);
