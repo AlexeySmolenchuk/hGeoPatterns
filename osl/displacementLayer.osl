@@ -58,14 +58,21 @@ shader displacementLayer(
         string widget = "checkBox",
         int connectable = 0,
     ]],
+    int source = 0  [[
+        string widget = "mapper",
+        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Vector:4",
+        int connectable = 0,
+    ]],
+    int mode = 0  [[
+        string widget = "mapper",
+        string options = "Add:0|Chain:1|Over:2|Min:3|Max:4",
+        int connectable = 0,
+    ]],
     Manifold inLayer = {0},
     color input = 0,
     float gain = 1,
-    int source = 0  [[
-        string widget = "mapper",
-        string options = "Scalar R:0|Scalar G:1|Scalar B:2|Vector:3",
-    ]],
-    int mode = 0,  // Original direction / recalculated
+    float offset = 0,
+    float mask = 1,
     Manifold textureManifold = {0},
 
     output Manifold outLayer = {0},
@@ -85,7 +92,7 @@ shader displacementLayer(
     if (isconnected(inLayer))
         localP = inLayer.Q;
 
-    if (isconnected(inLayer) && mode)
+    if (isconnected(inLayer) && (mode==1))  // Use incoming Normal only in Chain mode
         localN = inLayer.QN;
     else{
         getattribute("builtin", "Non", localN);
@@ -95,9 +102,11 @@ shader displacementLayer(
     localN = normalize(localN);
 
     if (active>0){
+        vector disp = 0;
+
         if (source < 3){
-            localP += localN * input[max(0, source)] * gain;
-        }else if (source==3){
+            disp = localN * (input[max(0, source)] + offset);
+        }else{
             float s = u;
             float t = v;
             vector tangent = 0;
@@ -113,17 +122,49 @@ shader displacementLayer(
 
             partialDeriv(localP, s, t, tangent, bitangent);
 
-            // The following mapping works well with EAR.exr from Arnold documentation
-            // https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
-            // https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
-            vector disp = normalize(tangent) * input.r
-                        + localN * input.g
-                        + normalize(bitangent) * input.b;
-
-            localP += disp * gain;
+            if (source == 3){
+                // This straightforward mapping works fine with this library
+                // https://cvision-gfx.webnode.page/
+                disp = normalize(tangent) * input.r
+                    + normalize(bitangent) * input.g
+                    + localN * (input.b + offset);
+            }else{
+                // The following mapping works well with EAR.exr from Arnold documentation
+                // https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
+                // https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
+                disp = normalize(tangent) * input.r
+                    + localN * (input.g + offset)
+                    + normalize(bitangent) * input.b;
+            }
         }
+
+        disp *= gain;
+
+        point displacedP = 0;
+
+        if (mode < 2)  // Add and Chain modes
+            displacedP = localP + disp;
+        else if (mode == 2)  // Over mode
+            displacedP = Po + disp;
+        else if (mode > 2){  // Min and Max modes
+            displacedP = localP;
+            vector incoming = localP - Po;
+
+            // Only compare Normal component of incoming and current displacements
+            // Possible discontinuities
+            float incomingProjection = dot(localN, incoming);
+            float dispProjection = dot(localN, disp);
+
+            if ((mode==3) && (incomingProjection > dispProjection))
+                displacedP = Po + disp;
+            else if ((mode==4) && (incomingProjection < dispProjection))
+                displacedP = Po + disp;
+        }
+
+        localP = mix(localP, displacedP, mask);
     }
 
+    // TODO: Compute if connected
     dispVector = localP - Po;
     displacedN = calculatenormal(localP);
 
