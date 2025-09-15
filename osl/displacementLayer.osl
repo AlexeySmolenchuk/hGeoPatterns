@@ -196,7 +196,7 @@ shader displacementLayer(
                 else if ((mode==4) && (incomingProjection < dispProjection))
                     displacedP = Po + disp;
 
-                heightMask = (incomingProjection > dispProjection);
+                heightMask = (incomingProjection < dispProjection);
             }else{
                 vector incomingTangential = incoming - localN * incomingProjection;
                 vector dispTangential = disp - localN * dispProjection;
