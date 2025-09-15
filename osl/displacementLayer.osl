@@ -106,6 +106,10 @@ shader displacementLayer(
     float smoothness = 0,
     float mask = 1,
     Manifold textureManifold = {0},
+    int optimizeIndirect = 1  [[
+        string widget = "checkBox",
+        int connectable = 0,
+    ]],
 
     output Manifold outLayer = {0},
     output normal displacedN = 0,
@@ -114,6 +118,17 @@ shader displacementLayer(
     output float thickness = 0,
 )
 {
+    // Skip calculation for indirect rays
+    if (optimizeIndirect){
+        int primary = 0;
+        getattribute("context", "primaryHit", primary);
+
+        if (!primary) {
+            displacedN = normalize(N);
+            exit();
+        }
+    }
+
     // Always initialize local variables to prevent NaNs
     point Po = 0;
     point localP = 0;
