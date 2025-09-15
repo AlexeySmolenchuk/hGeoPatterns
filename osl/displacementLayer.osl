@@ -53,8 +53,8 @@ void partialDeriv(point Q, float a, float b,
 // Modified quadratic polynomial functions from Inigo Quilez
 // https://iquilezles.org/articles/smin/
 void smin( float a, float b, float k, output float result, output float mask){
-    float h = 1.0 - min( abs(a-b)/(4.0*k), 1.0 );
-    float w = h*h;
+    float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
+    float w = h*h*h;
     float m = w*0.5;
     float s = w*k;
     if (a<b){
@@ -67,8 +67,8 @@ void smin( float a, float b, float k, output float result, output float mask){
 }
 
 void smax( float a, float b, float k, output float result, output float mask){
-    float h = 1.0 - min( abs(a-b)/(4.0*k), 1.0 );
-    float w = h*h;
+    float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
+    float w = h*h*h;
     float m = w*0.5;
     float s = w*k;
     if (a>b){
@@ -111,6 +111,7 @@ shader displacementLayer(
     output normal displacedN = 0,
     output vector dispVector = 0,
     output float heightMask = 0,
+    output float thickness = 0,
 )
 {
     // Always initialize local variables to prevent NaNs
@@ -187,6 +188,7 @@ shader displacementLayer(
             // Possible discontinuities
             float incomingProjection = dot(localN, incoming);
             float dispProjection = dot(localN, disp);
+            thickness = max(0, dispProjection-incomingProjection) * mask;
 
             if (smoothness == 0){
                 if ((mode==3) && (incomingProjection > dispProjection))
@@ -211,12 +213,15 @@ shader displacementLayer(
         localP = mix(localP, displacedP, mask);
     }
 
-    // TODO: Compute if connected
     dispVector = localP - Po;
-    displacedN = calculatenormal(localP);
+    if (isconnected(displacedN) || isconnected(outLayer))
+        displacedN = calculatenormal(localP);
 
     outLayer.Q = localP;
     outLayer.QN = displacedN;
+
+    if (!isconnected(displacedN))
+        return;
 
     displacedN = transform("object", "common", displacedN);
 
