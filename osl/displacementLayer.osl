@@ -1,0 +1,248 @@
+// Manifold struct and partialDeriv function from
+// https://graphics.pixar.com/library/BumpRoughness/
+
+/*
+# Copyright 2017 Pixar
+#
+# Licensed under the Apache License, Version 2.0 (the "Apache License")
+# with the following modification; you may not use this file except in
+# compliance with the Apache License and the following modification to it:
+# Section 6. Trademarks. is deleted and replaced with:
+#
+# 6. Trademarks. This License does not grant permission to use the trade
+#    names, trademarks, service marks, or product names of the Licensor
+#    and its affiliates, except as required to comply with Section 4(c) of
+#    the License and to reproduce the content of the NOTICE file.
+#
+# You may obtain a copy of the Apache License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the Apache License with the above modification is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the Apache License for the specific
+# language governing permissions and limitations under the Apache License.
+*/
+
+
+struct Manifold{
+    point Q;
+    normal QN;
+    float Qradius;
+};
+
+void partialDeriv(point Q, float a, float b,
+                  output vector dQda, output vector dQdb)
+{
+    vector dQdx = Dx(Q);
+    vector dQdy = Dy(Q);
+
+    float A = Dx(a);
+    float B = Dx(b);
+    float C = Dy(a);
+    float D = Dy(b);
+
+    float invdet = 1/(A*D - B*C);
+
+    dQda = (dQdx*D-dQdy*B)*invdet;
+    dQdb = (dQdy*A-dQdx*C)*invdet;
+}
+
+
+// Modified quadratic polynomial functions from Inigo Quilez
+// https://iquilezles.org/articles/smin/
+void smin( float a, float b, float k, output float result, output float mask){
+    float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
+    float w = h*h*h;
+    float m = w*0.5;
+    float s = w*k;
+    if (a<b){
+        result = a-s;
+        mask = m;
+    }else{
+        result = b-s;
+        mask = 1.0-m;
+    }
+}
+
+void smax( float a, float b, float k, output float result, output float mask){
+    float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
+    float w = h*h*h;
+    float m = w*0.5;
+    float s = w*k;
+    if (a>b){
+        result = a+s;
+        mask = m;
+    }else{
+        result = b+s;
+        mask = 1.0-m;
+    }
+}
+
+
+// Seems RenderMan calculates displacement and shading in different spaces
+// So perform all calculations and maintain "state" of
+// manifold layers in "object" space but output N in "common"
+shader displacementLayer(
+    int active = 1  [[
+        string widget = "checkBox",
+        int connectable = 0,
+    ]],
+    int source = 0  [[
+        string widget = "mapper",
+        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Vector:4",
+        int connectable = 0,
+    ]],
+    int mode = 0  [[
+        string widget = "mapper",
+        string options = "Add:0|Chain:1|Over:2|Min:3|Max:4",
+        int connectable = 0,
+    ]],
+    Manifold inLayer = {0},
+    color input = 0,
+    float gain = 1,
+    float offset = 0,
+    float smoothness = 0,
+    float mask = 1,
+    Manifold textureManifold = {0},
+    int optimizeIndirect = 1  [[
+        string widget = "checkBox",
+        int connectable = 0,
+    ]],
+
+    output Manifold outLayer = {0},
+    output normal displacedN = 0,
+    output vector dispVector = 0,
+    output float heightMask = 0,
+    output float thickness = 0,
+)
+{
+    // Skip calculation for indirect rays
+    if (optimizeIndirect){
+        int primary = 0;
+        getattribute("context", "primaryHit", primary);
+
+        if (!primary) {
+            displacedN = normalize(N);
+            exit();
+        }
+    }
+
+    // Always initialize local variables to prevent NaNs
+    point Po = 0;
+    point localP = 0;
+    normal localN = 0;
+
+    getattribute("primvar", "P", Po);
+    Po = transform("object", Po);
+
+    localP = Po;
+    if (isconnected(inLayer))
+        localP = inLayer.Q;
+
+    if (isconnected(inLayer) && (mode==1))  // Use incoming Normal only in Chain mode
+        localN = inLayer.QN;
+    else{
+        getattribute("builtin", "Non", localN);
+        localN = transform("object", localN);
+    }
+
+    localN = normalize(localN);
+
+    if (active>0){
+        vector disp = 0;
+
+        if (source < 3){
+            disp = localN * (input[max(0, source)] + offset);
+        }else{
+            float s = u;
+            float t = v;
+            vector tangent = 0;
+            vector bitangent = 0;
+
+            if (isconnected(textureManifold)){
+                s = textureManifold.Q.x;
+                t = 1 - textureManifold.Q.y;  // RenderMan default is invert T
+            }else{
+                getattribute("primvar", "s", s);
+                getattribute("primvar", "t", t);
+            }
+
+            partialDeriv((mode==1) ? localP : Po, s, t, tangent, bitangent);
+
+            if (source == 3){
+                // This straightforward mapping works fine with this library
+                // https://cvision-gfx.webnode.page/
+                disp = normalize(tangent) * input.r
+                    + normalize(bitangent) * input.g
+                    + localN * (input.b + offset);
+            }else{
+                // The following mapping works well with EAR.exr from Arnold documentation
+                // https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
+                // https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
+                disp = normalize(tangent) * input.r
+                    + localN * (input.g + offset)
+                    + normalize(bitangent) * input.b;
+            }
+        }
+
+        disp *= gain;
+
+        point displacedP = 0;
+
+        if (mode < 2)  // Add and Chain modes
+            displacedP = localP + disp;
+        else if (mode == 2)  // Over mode
+            displacedP = Po + disp;
+        else if (mode > 2){  // Min and Max modes
+            displacedP = localP;
+            vector incoming = localP - Po;
+
+            // Only compare Normal component of incoming and current displacements
+            // Possible discontinuities
+            float incomingProjection = dot(localN, incoming);
+            float dispProjection = dot(localN, disp);
+            thickness = max(0, dispProjection-incomingProjection) * mask;
+
+            if (smoothness == 0){
+                if ((mode==3) && (incomingProjection > dispProjection))
+                    displacedP = Po + disp;
+                else if ((mode==4) && (incomingProjection < dispProjection))
+                    displacedP = Po + disp;
+
+                heightMask = (incomingProjection < dispProjection);
+            }else{
+                vector incomingTangential = incoming - localN * incomingProjection;
+                vector dispTangential = disp - localN * dispProjection;
+                float result = 0;
+                if (mode==3)
+                    smin(incomingProjection, dispProjection, smoothness, result, heightMask);
+                else if (mode==4)
+                    smax(incomingProjection, dispProjection, smoothness, result, heightMask);
+            
+                displacedP = Po + localN * result + mix(incomingTangential, dispTangential, heightMask);
+            }
+        }
+
+        localP = mix(localP, displacedP, mask);
+    }
+
+    dispVector = localP - Po;
+    if (isconnected(displacedN) || isconnected(outLayer))
+        displacedN = calculatenormal(localP);
+
+    outLayer.Q = localP;
+    outLayer.QN = displacedN;
+
+    if (!isconnected(displacedN))
+        return;
+
+    displacedN = transform("object", "common", displacedN);
+
+    // The trick to make restored normals consistent
+    if ((dot(displacedN, I) > 0) && (dot(N, I) < 0))
+        displacedN = reflect(displacedN, I);  // Intentionally swap N and I
+
+    displacedN = normalize(displacedN);
+}
