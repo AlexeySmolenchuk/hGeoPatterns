@@ -7,7 +7,7 @@ if (MSVC)
     SET(HFS "C:/Program Files/Side Effects Software/Houdini 20.5.445" CACHE PATH "Houdini Installation Folder")
     SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
     SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
-    else()
+else()
     # LINUX
     SET(HFS "/opt/hfs20.5.445" CACHE PATH "Houdini Installation Folder")
     SET(RMANTREE "/opt/pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
@@ -26,7 +26,6 @@ find_package(Houdini REQUIRED
 
 include_directories(SYSTEM ${RMANTREE}/include )
 link_directories( ${RMANTREE}/lib )
-add_definitions(-DNDEBUG)
 
 # RenderMan manual recommends not to explicitly link plugins to
 # prman libraries and left it unresolved on Linux platform
@@ -53,6 +52,7 @@ foreach (rixplugin_name ${rixplugin_names})
     target_link_libraries( ${rixplugin_name} Houdini )
     set_target_properties(${rixplugin_name} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/rixplugins
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/rixplugins
         LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/rixplugins
         PREFIX "")
 endforeach ()
