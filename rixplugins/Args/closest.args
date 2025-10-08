@@ -16,14 +16,14 @@
         label="Filename"
         type="string"
         widget="fileInput"
-        connectable="False">
+        connectable="True">
         <help>Geometry Filename</help>
     </param>
 
     <param name="primgroup"
         label="Primitive Group"
         type="string"
-        connectable="False">
+        connectable="True">
         <help>Primitive Group to search</help>
     </param>
 
