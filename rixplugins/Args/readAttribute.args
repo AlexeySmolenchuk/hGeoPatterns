@@ -6,21 +6,6 @@
         Read attribute values to array like structure.
     </help>
 
-    <param name="filename"
-        label="Filename Override"
-        type="string"
-        widget="fileInput"
-        connectable="False">
-        <help>Override Geometry Filename. When empty - read geometry from incoming connection.</help>
-    </param>
-
-    <param name="attribute"
-        label="Attribute"
-        type="string"
-        default="P"
-        connectable="False">
-    </param>
-
     <param name="IdxA"
         label="Indexes"
         type="struct"
@@ -30,6 +15,21 @@
             <tag value="struct"/>
             <tag value="ArrayData"/>
         </tags>
+    </param>
+
+    <param name="filename"
+        label="Filename Override"
+        type="string"
+        widget="fileInput"
+        connectable="True">
+        <help>Override Geometry Filename. When empty - read geometry from incoming connection.</help>
+    </param>
+
+    <param name="attribute"
+        label="Attribute"
+        type="string"
+        default="P"
+        connectable="True">
     </param>
 
     <output name="ValuesA"

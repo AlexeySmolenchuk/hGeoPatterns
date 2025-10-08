@@ -16,7 +16,7 @@
         label="Filename"
         type="string"
         widget="fileInput"
-        connectable="False">
+        connectable="True">
         <help>Geometry Filename (bgeo or vdb)</help>
     </param>
 
@@ -24,7 +24,7 @@
         label="Name"
         type="string"
         default="density"
-        connectable="False">
+        connectable="True">
         <help>Empty Name or "*" means Any primitive</help>
     </param>
 
