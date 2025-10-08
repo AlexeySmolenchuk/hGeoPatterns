@@ -21,7 +21,7 @@
         label="Filename Override"
         type="string"
         widget="fileInput"
-        connectable="True">
+        connectable="False">
         <help>Override Geometry Filename. When empty - read geometry from incoming connection.</help>
     </param>
 
