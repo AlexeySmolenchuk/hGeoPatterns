@@ -1,5 +1,8 @@
 #include "hGeoStructsOSL.h"
 
+#define CAPACITY 8  // Capacity matches maximum number of sampled points
+#define DECAL 1
+
 vector build_coord_system(point pos, vector dir, normal n, point center, vector scale, float angle, float randomize){
     vector _u = normalize(dir);
     vector _v = normalize(cross(n, dir));
@@ -12,16 +15,60 @@ vector build_coord_system(point pos, vector dir, normal n, point center, vector 
         coord = vector( cos(a)*coord.x - sin(a)*coord.y, sin(a)*coord.x + cos(a)*coord.y, 0);
     }
     coord *= vector(1/scale.x, 1/scale.y, 1);
-    coord += vector(noise("cell", center*1000)-0.5) * randomize + 0.5;
+    // TODO: define outside
+    coord += vector(noise("cell", center)-0.5) * randomize + 0.5;
     return coord;
 }
 
+void toArray(vector dest[CAPACITY], ArrayData data){
+    dest[0] = data.v0;
+    dest[1] = data.v1;
+    dest[2] = data.v2;
+    dest[3] = data.v3;
+    dest[4] = data.v4;
+    dest[5] = data.v5;
+    dest[6] = data.v6;
+    dest[7] = data.v7;
+}
+
+void toArray(float dest[CAPACITY], ArrayData data){
+    dest[0] = data.v0.x;
+    dest[1] = data.v1.x;
+    dest[2] = data.v2.x;
+    dest[3] = data.v3.x;
+    dest[4] = data.v4.x;
+    dest[5] = data.v5.x;
+    dest[6] = data.v6.x;
+    dest[7] = data.v7.x;
+}
+
+void toArray(int dest[CAPACITY], ArrayData data){
+    dest[0] = int(round(data.v0.x));
+    dest[1] = int(round(data.v1.x));
+    dest[2] = int(round(data.v2.x));
+    dest[3] = int(round(data.v3.x));
+    dest[4] = int(round(data.v4.x));
+    dest[5] = int(round(data.v5.x));
+    dest[6] = int(round(data.v6.x));
+    dest[7] = int(round(data.v7.x));
+}
+
+
 shader buildCoords (
+    int style = 0 [[
+        string widget = "mapper",
+        string options = "Blend:0|Decals:1",
+        int connectable = 0,
+        ]],
     ArrayData Positions = {},
     ArrayData Normals = {},
+
+    // Optional
     ArrayData Directions = {},
     ArrayData Scales = {},
-    ArrayData Distances = {},
+    ArrayData Weights = {},
+    ArrayData Indexes = {},
+
     float scalex = 1.0,
     float scaley = 1.0,
     vector defaultDirection = vector(0, 0, 1),
@@ -29,95 +76,105 @@ shader buildCoords (
     float angle = 0.0,
     float randomize = 1.0,
 
-    output vector coords[8] = {},
-    output vector randoms[8] = {},
-    output float weights[8] = {},
+    point position = 0,
+
+    output vector outCoords[CAPACITY] = {0},
+    output vector outHashes[CAPACITY] = {0},
+    output float outWeights[CAPACITY] = {0},
     output color DBG = 0
 )
 {
     point myP;
-    if (!getattribute("primvar", "__Pref", myP)){
-        getattribute("primvar", "P", myP);
-        myP = transform("object", myP);
-    }
+    if (isconnected(position))
+        myP = position;
+    else
+        myP = transform("object", P);
 
+    vector pos[CAPACITY];
+    vector nrml[CAPACITY];
+    vector dir[CAPACITY];
+    vector scale[CAPACITY];
 
+    toArray(pos,    Positions);
+    toArray(nrml,   Normals);
+    toArray(dir,    Directions);
+    toArray(scale,  Scales);
+
+    float r[CAPACITY];
     int n = Positions.num;
 
-    ArrayData dir;
-    if (isconnected(Directions)){
-        dir = Directions;
-    }else{
-        dir.v0 = defaultDirection;
-        dir.v1 = defaultDirection;
-        dir.v2 = defaultDirection;
-        dir.v3 = defaultDirection;
-        dir.v4 = defaultDirection;
-        dir.v5 = defaultDirection;
-        dir.v6 = defaultDirection;
-        dir.v7 = defaultDirection;
+    if (isconnected(Indexes))
+    {
+        toArray(r, Indexes);
+    }
+    else
+    {
+        // If no Indexes provided generate Position based 1D array of randoms
+        // to determine texture selection and overlapping presence
+        for (int i=0; i<n; i++)
+            r[i] = hashnoise(pos[i]);
     }
 
-    ArrayData scale;
-    if (isconnected(Scales)){
-        scale.v0 = Scales.v0 * vector(scalex, scaley, 1.0);
-        scale.v1 = Scales.v1 * vector(scalex, scaley, 1.0);
-        scale.v2 = Scales.v2 * vector(scalex, scaley, 1.0);
-        scale.v3 = Scales.v3 * vector(scalex, scaley, 1.0);
-        scale.v4 = Scales.v4 * vector(scalex, scaley, 1.0);
-        scale.v5 = Scales.v5 * vector(scalex, scaley, 1.0);
-        scale.v6 = Scales.v6 * vector(scalex, scaley, 1.0);
-        scale.v7 = Scales.v7 * vector(scalex, scaley, 1.0);
-    }else{
-        scale.v0 = vector(scalex, scaley, 1.0);
-        scale.v1 = vector(scalex, scaley, 1.0);
-        scale.v2 = vector(scalex, scaley, 1.0);
-        scale.v3 = vector(scalex, scaley, 1.0);
-        scale.v4 = vector(scalex, scaley, 1.0);
-        scale.v5 = vector(scalex, scaley, 1.0);
-        scale.v6 = vector(scalex, scaley, 1.0);
-        scale.v7 = vector(scalex, scaley, 1.0);
+    int sorted[CAPACITY] = {0,1,2,3,4,5,6,7};
+
+    if (style==DECAL) // Sort only for overlapping decals
+        for (int i=0; i<n; i++){
+            for (int j=i+1; j<n; j++){
+                if (r[sorted[i]] < r[sorted[j]]){
+                    int tmp = sorted[i];
+                    sorted[i] = sorted[j];
+                    sorted[j] = tmp;
+                }
+            }
+        }
+
+    // Assume presorted by distance (which is true for "samplePoints")
+    float dist0 = distance(myP, pos[sorted[0]]);
+    float overall_weight = 0;
+
+    for (int i=0; i<n; i++)
+    {
+        int idx = sorted[i];
+        outCoords[i] = build_coord_system( myP,
+            isconnected(Directions) ? dir[idx] : transform("common", "object", defaultDirection),
+            nrml[idx],
+            pos[idx],
+            (isconnected(Scales) ? scale[idx] : vector(1,1,1)) * vector(scalex, scaley, 0),
+            angle,
+            randomize);
+
+        outHashes[i] = isconnected(Indexes) ? hashnoise(r[idx]) : hashnoise(pos[idx]);
+
+        if (style==DECAL)
+        {
+            outWeights[i] = 1.0;
+        }
+        else
+        {
+            if (i==0)
+                outWeights[i] = 1.0;
+            else
+            {
+                outWeights[i] = pow( dist0 / ( dist0 + distance(myP, pos[idx]) ) * 2, sharpness);
+                outWeights[i] = linearstep(0.01, 0.99, outWeights[i]);
+            }
+
+            overall_weight += outWeights[i];
+        }
     }
 
-             coords[0] = build_coord_system(myP, dir.v0, Normals.v0, Positions.v0, scale.v0, angle, randomize);
-    if (n>1) coords[1] = build_coord_system(myP, dir.v1, Normals.v1, Positions.v1, scale.v1, angle, randomize);
-    if (n>2) coords[2] = build_coord_system(myP, dir.v2, Normals.v2, Positions.v2, scale.v2, angle, randomize);
-    if (n>3) coords[3] = build_coord_system(myP, dir.v3, Normals.v3, Positions.v3, scale.v3, angle, randomize);
-    if (n>4) coords[4] = build_coord_system(myP, dir.v4, Normals.v4, Positions.v4, scale.v4, angle, randomize);
-    if (n>5) coords[5] = build_coord_system(myP, dir.v5, Normals.v5, Positions.v5, scale.v5, angle, randomize);
-    if (n>6) coords[6] = build_coord_system(myP, dir.v6, Normals.v6, Positions.v6, scale.v6, angle, randomize);
-    if (n>7) coords[7] = build_coord_system(myP, dir.v7, Normals.v7, Positions.v7, scale.v7, angle, randomize);
-
-             weights[0] = 1.0;
-    if (n>1) weights[1] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v1.x ) * 2, sharpness);
-    if (n>2) weights[2] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v2.x ) * 2, sharpness);
-    if (n>3) weights[3] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v3.x ) * 2, sharpness);
-    if (n>4) weights[4] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v4.x ) * 2, sharpness);
-    if (n>5) weights[5] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v5.x ) * 2, sharpness);
-    if (n>6) weights[6] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v6.x ) * 2, sharpness);
-    if (n>7) weights[7] = pow( Distances.v0.x / ( Distances.v0.x + Distances.v7.x ) * 2, sharpness);
-
-             randoms[0] = vector(noise("cell", Positions.v0*1000));
-    if (n>1) randoms[1] = vector(noise("cell", Positions.v1*1000));
-    if (n>2) randoms[2] = vector(noise("cell", Positions.v2*1000));
-    if (n>3) randoms[3] = vector(noise("cell", Positions.v3*1000));
-    if (n>4) randoms[4] = vector(noise("cell", Positions.v4*1000));
-    if (n>5) randoms[5] = vector(noise("cell", Positions.v5*1000));
-    if (n>6) randoms[6] = vector(noise("cell", Positions.v6*1000));
-    if (n>7) randoms[7] = vector(noise("cell", Positions.v7*1000));
-
-    float overal_weight = weights[0]
-                        + weights[1]
-                        + weights[2]
-                        + weights[3]
-                        + weights[4]
-                        + weights[5]
-                        + weights[6]
-                        + weights[7];
-
-    float inv = 1.0/overal_weight;
+    float inv = 1.0/overall_weight;
     for (int i = 0; i<n; i++){
-        weights[i]  *= inv;
-        DBG += randoms[i] * weights[i];
+        float frame = 1;
+        if (style==DECAL)
+        {
+            vector tmp = abs(outCoords[i]-0.5);
+            float d = max(tmp.x, tmp.y);
+            frame = (d < 0.5) ? (d < 0.49) ? 0.1 : 1 : 0;
+        }
+        else
+            outWeights[i] *= inv;
+
+        DBG += outHashes[i] * frame * outWeights[i];
     }
 }

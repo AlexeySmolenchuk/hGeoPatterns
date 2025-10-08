@@ -1,8 +1,57 @@
+#define CAPACITY 16  // Capacity for input texture array, corresponding probabilities and per-texture scales
+#define FILL16(x) x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x
+
+#define DECAL 1
+
 shader sampleTextures(
+    int style = 0 [[
+        string label = "Style",
+        string widget = "mapper",
+        string options = "Blend:0|Decals:1",
+        int connectable = 0,
+        ]],
+    int useTextureArray = 0 [[
+        string label = "Use Texture Array",
+        string widget = "checkBox",
+        int connectable = 0,
+        ]],
+    int useProbabilityArray = 0 [[
+        string label = "Use Probability Array",
+        string widget = "checkBox",
+        string conditionalVisOp="notEqualTo",
+        string conditionalVisPath="../useTextureArray",
+        string conditionalVisValue="0",
+        int connectable = 0,
+        ]],
+    int useScalesArray = 0 [[
+        string label = "Use Per Texture Scale Array",
+        string widget = "checkBox",
+        string conditionalVisOp="notEqualTo",
+        string conditionalVisPath="../useTextureArray",
+        string conditionalVisValue="0",
+        int connectable = 0,
+        ]],
+    int separateAlpha = 1 [[
+        string label = "Separate Alpha Texture",
+        string widget = "checkBox",
+        int connectable = 0,
+        ]],
     string file = "" [[
-        string widget = "assetIdInput",
         string label = "Filename",
+        string widget = "fileInput",
         string options = "texture",
+        string conditionalVisOp="notEqualTo",
+        string conditionalVisPath="../useTextureArray",
+        string conditionalVisValue="1",
+        int connectable = 0,
+        ]],
+    string fileAlpha = "" [[
+        string label = "Filename Alpha",
+        string widget = "fileInput",
+        string options = "texture",
+        string conditionalVisOp="notEqualTo",
+        string conditionalVisPath="../useTextureArray",
+        string conditionalVisValue="1",
         int connectable = 0,
         ]],
     float filter = 1.0 [[
@@ -11,39 +60,205 @@ shader sampleTextures(
         ]],
     float gamma = 1.0 [[
         string label = "Blending Contrast",
+        string conditionalVisOp="notEqualTo",
+        string conditionalVisPath="../style",
+        string conditionalVisValue="1",
         int connectable = 0,
         ]],
-    vector coords[] = {},
-    vector randoms[] = {},
-    float weights[] = {},
+
+    vector inCoords[] = {},
+    vector inHashes[] = {},  // x coord used to assign textures
+    float inWeights[] = {},
+
+    string inTextures[] = {},
+    string inAlphaTextures[] = {},
+    float inProbabilities[] = {FILL16(1)},
+    float inScales[] = {FILL16(1)},
+
+    color shadowing = 1.0,
+    float offsetting = 0.0,
+
     output color out = 0,
-    output float masks[8] = {},
+    output float alpha = 0,
+    output float outWeights[CAPACITY] = {},
     output color DBG = 0,
 )
 {
     float sum = 0;
+    DBG = 0;
 
-    for (int n = 0; n < 8; n++){
-        vector uv = coords[n];
-        if (weights[n] > 0.0){
+    int numTextures = 0;
+    string nonEmptyTextures[CAPACITY];
+    string nonEmptyAlphaTextures[CAPACITY];
+    float cdfMax = 0;
+    float cdf[CAPACITY];
 
-            // force tiling
+    if (useTextureArray)
+        if (useProbabilityArray)
+            for (int i = 0; i < arraylength(inTextures); i++)
+            {
+                cdf[numTextures] = cdfMax;
+                if (inTextures[i] != "")
+                {
+                    nonEmptyTextures[numTextures] = inTextures[i];
+                    nonEmptyAlphaTextures[numTextures] = inAlphaTextures[i];
+                    cdf[numTextures] += inProbabilities[i];
+                    cdfMax = cdf[numTextures];
+                    numTextures++;
+                }
+            }
+        else
+            for (int i = 0; i < arraylength(inTextures); i++)
+            {
+                if (inTextures[i] != "")
+                {
+                    nonEmptyTextures[numTextures] = inTextures[i];
+                    nonEmptyAlphaTextures[numTextures] = inAlphaTextures[i];
+                    numTextures++;
+                }
+            }
+
+    // DBG = isconnected(inTextures[0]);
+
+    if (style==DECAL)
+    {
+        color self_shadowing = 1.0;
+        float self_offsetting = 0.0;
+        
+        out = 0;
+        alpha = 0.0;
+
+        for (int i=0; i < arraylength(inCoords); i++)
+        {
+            if (alpha > 0.995)
+                break;
+
+            if (inWeights[i] <= 0.0)
+                continue;
+
+            vector uv = 0;
+            string textureFile;
+            string alphaTextureFile;
+
+            if (useTextureArray)
+            {
+                int idx = 0;
+
+                if (useProbabilityArray)
+                    while (cdf[idx] < (inHashes[i].x * cdfMax)) idx++;
+                else
+                    idx = inHashes[i].x * numTextures;
+
+                if (useScalesArray && inScales[idx]==0)
+                    continue;
+
+                textureFile = nonEmptyTextures[idx];
+                alphaTextureFile = nonEmptyAlphaTextures[idx];
+
+                uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
+            }
+            else
+            {
+                textureFile = file;
+                alphaTextureFile = fileAlpha;
+                uv = inCoords[i];
+            }
+
+            if ((abs(uv.x - 0.5) < 0.5) && (abs(uv.y - 0.5) < 0.5))
+            {
+                if (separateAlpha)
+                {
+                    color rgb = texture(textureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                    float tex_alpha = texture(alphaTextureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i];
+                    out += rgb * tex_alpha * (1-alpha) * inWeights[i];
+                    alpha = 1.0 - (1.0 - alpha) * (1.0 - tex_alpha);
+                    DBG += color(2,0,0);
+                }
+                else
+                {
+                    int channels = 0;
+                    gettextureinfo (textureFile, "channels", channels);
+
+                    if (channels>3)
+                    {
+                        float tex_alpha = 1;
+                        color rgb = texture(textureFile, uv.x, 1-uv.y, "alpha", tex_alpha, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                        out += rgb * tex_alpha * (1-alpha) * inWeights[i];
+                        alpha = 1.0 - (1.0 - alpha) * (1.0 - tex_alpha);
+                        DBG += color(1,0,0);
+                    }
+                    else
+                    {
+                        out = texture(textureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                        alpha = 1.0;
+                        DBG += color(1,0,0);
+                        break;
+                    }
+                }
+            }
+
+            vector my_coords = vector(inCoords[i].x - 0.5, inCoords[i].y - 0.5, 0);
+            float dist = length(my_coords);
+            self_shadowing *= mix(shadowing, color(1.0), smoothstep(0.0, 0.75, dist));
+            self_offsetting += mix(offsetting, 0, smoothstep(0.0, 0.75, dist));
+
+        }
+
+        // DBG = self_shadowing;
+    }
+    else
+    {
+        // Blending Mode
+        out = 0;
+        alpha = 1.0;
+
+        for (int i = 0; i < arraylength(inCoords); i++)
+        {
+            if (inWeights[i] <= 0.0)
+                continue;
+
+            vector uv = 0;
+            string textureFile;
+
+            if (useTextureArray)
+            {
+                int idx = 0;
+
+                if (useProbabilityArray)
+                    while (cdf[idx] < (inHashes[i].x * cdfMax)) idx++;
+                else
+                    idx = inHashes[i].x * numTextures;
+
+                if (useScalesArray && inScales[idx]==0)
+                    continue;
+
+                textureFile = nonEmptyTextures[idx];
+                uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
+            }
+            else
+            {
+                textureFile = file;
+                uv = inCoords[i];
+            }
+
+            // Force texture tiling
             uv.x = uv.x - floor(uv.x);
             uv.y = uv.y - floor(uv.y);
 
-            vector temp = pow(texture(file, uv.x, 1.0-uv.y, "width", filter)/0.18, gamma) * weights[n];
-            masks[n] = temp.x;
+            vector temp = pow(texture(textureFile, uv.x, 1.0-uv.y, "width", filter)/0.18, gamma) * inWeights[i];
+            outWeights[i] = temp.x;
             sum += temp.x;
             out += temp;
-            DBG += randoms[n] * weights[n];
         }
-    }
 
-    out = pow(out, 1.0/gamma)*0.18;
-    
-    float inv = 1.0/sum;
+        out = pow(out, 1.0/gamma)*0.18;
 
-    for (int i = 0; i < 8; i++){
-        masks[i]  *= inv;
+        float inv = 1.0/sum;
+
+        for (int i = 0; i < arraylength(inCoords); i++)
+        {
+            outWeights[i]  *= inv;
+            DBG += inHashes[i] * outWeights[i];
+        }
     }
 }
