@@ -8,6 +8,19 @@ struct Manifold{
     float Qradius;
 };
 
+#define DISTRIBUTION_TEXTURE_CONDITIONALS \
+    string conditionalVis1Path="../useDistributionTexture", \
+    string conditionalVis1Op="equalTo", \
+    string conditionalVis1Value="1", \
+    \
+    string conditionalVis2Path="../mode", \
+    string conditionalVis2Op="equalTo", \
+    string conditionalVis2Value="1", \
+    \
+    string conditionalVisLeft="conditionalVis1", \
+    string conditionalVisOp="and", \
+    string conditionalVisRight="conditionalVis2",
+
 
 shader generateCoords
 (
@@ -25,23 +38,46 @@ shader generateCoords
     float frequency = 1,
     float jitter = 0.5,
     float scale = 1,
+    float scaleRandom = 0,
     float angle = 0,
     float rotationRandom = 1,
     int seed = 0,
-    float sharpness = 10.0,
-    int useDistributionTexture = 0 [[
-        string widget = "checkBox",
+    float sharpness = 0.5  [[
+        string label = "Sharpness",
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="0",
         int connectable = 0,
         ]],
-    string distributionTexture = "" [[
+    int useDistributionTexture = 0  [[
+        string widget = "checkBox",
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="1",
+        int connectable = 0,
+        ]],
+    string distributionTexture = ""  [[
         string widget = "fileInput",
         string label = "Distribution Texture",
         string options = "texture",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
         int connectable = 0,
         ]],
-    float l = 0,
-    float h = 1,
-    float e = 1,
+    float l = 0  [[
+        string label = "Clamp Min",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float h = 1  [[
+        string label = "Clamp Max",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float e = 1  [[
+        string label = "Exponent",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
     Manifold textureManifold = {0},
 
     output vector outCoords[CAPACITY] = {0},
@@ -178,8 +214,9 @@ shader generateCoords
         float rotation = angle + (rand.y - 0.5) * rotationRandom;
         rotation *= 2 * M_PI;
 
-        vector jitterDirection = hashnoise(rand) - 0.5;
-        jitterDirection.z = 0;
+        vector temp = hashnoise(rand);
+        vector jitterDirection = {temp.x - 0.5, temp.y - 0.5, 0};
+        float randomizedScale = mix(scale/(1 + scaleRandom*0.5), scale*(1 + scaleRandom*0.5) , temp.z);
 
         if (hexagonal)
         {
@@ -190,7 +227,7 @@ shader generateCoords
 
         vector cellJittered = cell + jitterDirection * jitter;
 
-        vector current = (uv - cellJittered) / scale;
+        vector current = (uv - cellJittered) / randomizedScale;
         current.y *= -1;
 
         if (hexagonal)
@@ -236,7 +273,7 @@ shader generateCoords
     for (int i = 0; i<num_evaluations; i++)
     {
         float dist = distances[i];
-        outWeights[i] = pow( closestDist / ( closestDist + dist ) * 2, sharpness);
+        outWeights[i] = pow( closestDist / ( closestDist + dist ) * 2, 5/(1-min(0.99, sharpness)));
         outWeights[i] = linearstep(0.01, 0.99, outWeights[i]);
         overall_weight += outWeights[i];
     }
