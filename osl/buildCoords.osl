@@ -1,7 +1,9 @@
 #include "hGeoStructsOSL.h"
 
 #define CAPACITY 8  // Capacity matches maximum number of sampled points
-#define DECAL 1
+
+#define SPLAT 1
+
 
 vector build_coord_system(point pos, vector dir, normal n, point center, vector scale, float angle, float randomize){
     vector _u = normalize(dir);
@@ -55,9 +57,9 @@ void toArray(int dest[CAPACITY], ArrayData data){
 
 
 shader buildCoords (
-    int style = 0 [[
+    int mode = 0 [[
         string widget = "mapper",
-        string options = "Blend:0|Decals:1",
+        string options = "Blend:0|Splat:1",
         int connectable = 0,
         ]],
     ArrayData Positions = {},
@@ -117,7 +119,7 @@ shader buildCoords (
 
     int sorted[CAPACITY] = {0,1,2,3,4,5,6,7};
 
-    if (style==DECAL) // Sort only for overlapping decals
+    if (mode==SPLAT) // Sort only for overlapping splats
         for (int i=0; i<n; i++){
             for (int j=i+1; j<n; j++){
                 if (r[sorted[i]] < r[sorted[j]]){
@@ -145,7 +147,7 @@ shader buildCoords (
 
         outHashes[i] = isconnected(Indexes) ? hashnoise(r[idx]) : hashnoise(pos[idx]);
 
-        if (style==DECAL)
+        if (mode==SPLAT)
         {
             outWeights[i] = 1.0;
         }
@@ -166,7 +168,7 @@ shader buildCoords (
     float inv = 1.0/overall_weight;
     for (int i = 0; i<n; i++){
         float frame = 1;
-        if (style==DECAL)
+        if (mode==SPLAT)
         {
             vector tmp = abs(outCoords[i]-0.5);
             float d = max(tmp.x, tmp.y);
