@@ -241,7 +241,10 @@ shader generateCoords
             current = vector( cos(rotation)*current.x - sin(rotation)*current.y,
                               sin(rotation)*current.x + cos(rotation)*current.y, 0);
 
-        outCoords[i] = current+0.5;
+        outCoords[i] = current + 0.5;
+        // TODO Maybe separate parameter for random offset within cell?
+        outCoords[i] += jitterDirection * jitter * 2;
+
         float w = 1.0;
 
         if (mode==SPLAT)
