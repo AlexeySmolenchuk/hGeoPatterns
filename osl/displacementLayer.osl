@@ -241,8 +241,9 @@ shader displacementLayer(
     displacedN = transform("object", "common", displacedN);
 
     // The trick to make restored normals consistent
-    if ((dot(displacedN, I) > 0) && (dot(N, I) < 0))
-        displacedN = reflect(displacedN, I);  // Intentionally swap N and I
+    // TODO: check refraction usecase
+    if ((dot(displacedN, I) > 0))
+        displacedN = reflect(displacedN, normalize(I));  // Intentionally swap N and I
 
     displacedN = normalize(displacedN);
 }
