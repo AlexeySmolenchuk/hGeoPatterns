@@ -91,7 +91,7 @@ shader displacementLayer(
     ]],
     int source = 0  [[
         string widget = "mapper",
-        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Vector:4",
+        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Mudbox:4|Object:5",
         int connectable = 0,
     ]],
     int mode = 0  [[
@@ -177,13 +177,15 @@ shader displacementLayer(
                 disp = normalize(tangent) * input.r
                     + normalize(bitangent) * input.g
                     + localN * (input.b + offset);
-            }else{
+            }else if (source == 4){
                 // The following mapping works well with EAR.exr from Arnold documentation
                 // https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
                 // https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
                 disp = normalize(tangent) * input.r
                     + localN * (input.g + offset)
                     + normalize(bitangent) * input.b;
+            }else{
+                disp = input;
             }
         }
 
