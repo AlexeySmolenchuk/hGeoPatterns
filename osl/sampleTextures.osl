@@ -112,7 +112,10 @@ shader sampleTextures(
     float cdfMax = 0;
     float cdf[CAPACITY];
 
-    if (useTextureArray)
+    // Let negative hash.x represent direct texture assignment shifted by -1
+    int useTextureID = (inHashes[0].x < 0);
+
+    if (useTextureArray && !useTextureID)
     {
         if (useProbabilityArray)
         {
@@ -143,8 +146,6 @@ shader sampleTextures(
         }
     }
 
-    // DBG = isconnected(inTextures[0]);
-
     if (mode==SPLAT)
     {
         color self_shadowing = 1.0;
@@ -167,7 +168,7 @@ shader sampleTextures(
                     {
                         int idx = 0;
 
-                        if (useProbabilityArray)
+                        if (useProbabilityArray && !useTextureID)
                             while (cdf[idx] < (inHashes[i].x * cdfMax)) idx++;
                         else
                             idx = inHashes[i].x * numTextures;
@@ -176,8 +177,17 @@ shader sampleTextures(
                         if (useScalesArray && inScales[idx]==0)
                             continue;
 
-                        textureFile = nonEmptyTextures[idx];
-                        alphaTextureFile = nonEmptyAlphaTextures[idx];
+                        if (useTextureID)
+                        {
+                            int texIdx = -int(round(inHashes[i].x))-1;
+                            textureFile = inTextures[texIdx];
+                            alphaTextureFile = inAlphaTextures[texIdx];
+                        }
+                        else
+                        {
+                            textureFile = nonEmptyTextures[idx];
+                            alphaTextureFile = nonEmptyAlphaTextures[idx];
+                        }
 
                         uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
                     }
@@ -251,7 +261,7 @@ shader sampleTextures(
             {
                 int idx = 0;
 
-                if (useProbabilityArray)
+                if (useProbabilityArray && !useTextureID)
                     while (cdf[idx] < (inHashes[i].x * cdfMax)) idx++;
                 else
                     idx = inHashes[i].x * numTextures;
@@ -259,7 +269,13 @@ shader sampleTextures(
                 if (useScalesArray && inScales[idx]==0)
                     continue;
 
-                textureFile = nonEmptyTextures[idx];
+                if (useTextureID)
+                {
+                    int texIdx = -int(round(inHashes[i].x))-1;
+                    textureFile = inTextures[texIdx];
+                }
+                else
+                    textureFile = nonEmptyTextures[idx];
                 uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
             }
             else

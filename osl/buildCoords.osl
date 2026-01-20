@@ -70,6 +70,7 @@ shader buildCoords (
     ArrayData Scales = {},
     ArrayData Weights = {},
     ArrayData Indexes = {},
+    ArrayData TextureID = {},
 
     float scalex = 1.0,
     float scaley = 1.0,
@@ -96,11 +97,13 @@ shader buildCoords (
     vector nrml[CAPACITY];
     vector dir[CAPACITY];
     vector scale[CAPACITY];
+    int    texID[CAPACITY];
 
     toArray(pos,    Positions);
     toArray(nrml,   Normals);
     toArray(dir,    Directions);
     toArray(scale,  Scales);
+    toArray(texID,  TextureID);
 
     float r[CAPACITY];
     int n = Positions.num;
@@ -146,6 +149,10 @@ shader buildCoords (
             randomize);
 
         outHashes[i] = isconnected(Indexes) ? hashnoise(r[idx]) : hashnoise(pos[idx]);
+
+        // Let negative hash.x represent direct texture assignment shifted by -1
+        if (isconnected(TextureID))
+            outHashes[i].x = -texID[idx]-1; 
 
         if (mode==SPLAT)
         {
