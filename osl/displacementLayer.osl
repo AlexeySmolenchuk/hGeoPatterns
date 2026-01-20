@@ -252,6 +252,13 @@ shader displacementLayer(
 
     displacedN = transform("object", "common", displacedN);
 
+    // Fix facets
+    normal Non = N;
+    normal Naon = N;
+    getattribute("builtin", "Non", Non);
+    getattribute("builtin", "Naon", Naon);
+    displacedN = normalize(displacedN) + normalize(Non) - normalize(Naon);
+
     // The trick to make restored normals consistent
     // TODO: check refraction usecase
     if (fixNormals && (dot(displacedN, I) > 0))
