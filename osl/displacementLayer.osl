@@ -91,7 +91,7 @@ shader displacementLayer(
     ]],
     int source = 0  [[
         string widget = "mapper",
-        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Vector:4",
+        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Mudbox:4|Object:5",
         int connectable = 0,
     ]],
     int mode = 0  [[
@@ -106,6 +106,10 @@ shader displacementLayer(
     float smoothness = 0,
     float mask = 1,
     Manifold textureManifold = {0},
+    int fixNormals = 1  [[
+        string widget = "checkBox",
+        int connectable = 0,
+    ]],
     int optimizeIndirect = 1  [[
         string widget = "checkBox",
         int connectable = 0,
@@ -113,6 +117,7 @@ shader displacementLayer(
 
     output Manifold outLayer = {0},
     output normal displacedN = 0,
+    output vector displacedNG = 0,
     output vector dispVector = 0,
     output float heightMask = 0,
     output float thickness = 0,
@@ -177,13 +182,15 @@ shader displacementLayer(
                 disp = normalize(tangent) * input.r
                     + normalize(bitangent) * input.g
                     + localN * (input.b + offset);
-            }else{
+            }else if (source == 4){
                 // The following mapping works well with EAR.exr from Arnold documentation
                 // https://help.autodesk.com/view/ARNOL/ENU/?guid=arnold_for_houdini_shading_ah_Combining_Regular_and_Vector_Displacement_Maps_html
                 // https://areadownloads.autodesk.com/wdm/arnold/htoa/vector-and-regular-displacement.zip
                 disp = normalize(tangent) * input.r
                     + localN * (input.g + offset)
                     + normalize(bitangent) * input.b;
+            }else{
+                disp = input;
             }
         }
 
@@ -229,8 +236,13 @@ shader displacementLayer(
     }
 
     dispVector = localP - Po;
-    if (isconnected(displacedN) || isconnected(outLayer))
+    if (isconnected(displacedN) || isconnected(displacedNG) || isconnected(outLayer)){
         displacedN = calculatenormal(localP);
+
+        // Match Pixar implementation
+        float k = dot(N, displacedN);
+        displacedNG = (k * N - displacedN) / max(1.0e-8, abs(k));
+    }
 
     outLayer.Q = localP;
     outLayer.QN = displacedN;
@@ -240,9 +252,17 @@ shader displacementLayer(
 
     displacedN = transform("object", "common", displacedN);
 
+    // Fix facets
+    normal Non = N;
+    normal Naon = N;
+    getattribute("builtin", "Non", Non);
+    getattribute("builtin", "Naon", Naon);
+    displacedN = normalize(displacedN) + normalize(Non) - normalize(Naon);
+
     // The trick to make restored normals consistent
-    if ((dot(displacedN, I) > 0) && (dot(N, I) < 0))
-        displacedN = reflect(displacedN, I);  // Intentionally swap N and I
+    // TODO: check refraction usecase
+    if (fixNormals && (dot(displacedN, I) > 0))
+        displacedN = reflect(displacedN, normalize(I));  // Intentionally swap N and I
 
     displacedN = normalize(displacedN);
 }
