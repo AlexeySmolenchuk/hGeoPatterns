@@ -1,7 +1,7 @@
 #include "hGeoStructsOSL.h"
 
-#define CAPACITY 8  // Capacity matches maximum number of sampled points
-#define FILL8(x) x, x, x, x, x, x, x, x
+#define CAPACITY 16  // Capacity matches maximum number of sampled points
+#define FILL16(x) x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x
 #define SPLAT 1
 
 
@@ -32,6 +32,14 @@ void toArray(vector dest[CAPACITY], ArrayData data){
     if (n>5) dest[5] = data.v5;
     if (n>6) dest[6] = data.v6;
     if (n>7) dest[7] = data.v7;
+    if (n>8) dest[8] = data.v8;
+    if (n>9) dest[9] = data.v9;
+    if (n>10) dest[10] = data.v10;
+    if (n>11) dest[11] = data.v11;
+    if (n>12) dest[12] = data.v12;
+    if (n>13) dest[13] = data.v13;
+    if (n>14) dest[14] = data.v14;
+    if (n>15) dest[15] = data.v15;
 }
 
 void toArray(float dest[CAPACITY], ArrayData data){
@@ -44,6 +52,14 @@ void toArray(float dest[CAPACITY], ArrayData data){
     if (n>5) dest[5] = data.v5.x;
     if (n>6) dest[6] = data.v6.x;
     if (n>7) dest[7] = data.v7.x;
+    if (n>8) dest[8] = data.v8.x;
+    if (n>9) dest[9] = data.v9.x;
+    if (n>10) dest[10] = data.v10.x;
+    if (n>11) dest[11] = data.v11.x;
+    if (n>12) dest[12] = data.v12.x;
+    if (n>13) dest[13] = data.v13.x;
+    if (n>14) dest[14] = data.v14.x;
+    if (n>15) dest[15] = data.v15.x;
 }
 
 void toArray(int dest[CAPACITY], ArrayData data){
@@ -56,6 +72,15 @@ void toArray(int dest[CAPACITY], ArrayData data){
     if (n>5) dest[5] = int(round(data.v5.x));
     if (n>6) dest[6] = int(round(data.v6.x));
     if (n>7) dest[7] = int(round(data.v7.x));
+    if (n>8) dest[8] = int(round(data.v8.x));
+    if (n>9) dest[9] = int(round(data.v9.x));
+    if (n>10) dest[10] = int(round(data.v10.x));
+    if (n>11) dest[11] = int(round(data.v11.x));
+    if (n>12) dest[12] = int(round(data.v12.x));
+    if (n>13) dest[13] = int(round(data.v13.x));
+    if (n>14) dest[14] = int(round(data.v14.x));
+    if (n>15) dest[15] = int(round(data.v15.x));
+
 }
 
 shader buildCoords (
@@ -83,9 +108,9 @@ shader buildCoords (
 
     point position = 0,
 
-    output vector outCoords[CAPACITY] = {FILL8(0)},
-    output vector outHashes[CAPACITY] = {FILL8(0)},
-    output float outWeights[CAPACITY] = {FILL8(0)},
+    output vector outCoords[CAPACITY] = {FILL16(0)},
+    output vector outHashes[CAPACITY] = {FILL16(0)},
+    output float outWeights[CAPACITY] = {FILL16(0)},
     output color DBG = 0
 )
 {
@@ -122,7 +147,7 @@ shader buildCoords (
             r[i] = hashnoise(pos[i]);
     }
 
-    int sorted[CAPACITY] = {0,1,2,3,4,5,6,7};
+    int sorted[CAPACITY] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
     if (mode==SPLAT) // Sort only for overlapping splats
         for (int i=0; i<n; i++){
@@ -155,7 +180,7 @@ shader buildCoords (
         // Let negative hash.x represent direct texture assignment shifted by -1
         if (isconnected(TextureID) && (TextureID.num>0))
         {
-            int texIdx = clamp(idx, 0, 16); // Capacity of texture array higher than capacity of ArrayData
+            int texIdx = clamp(idx, 0, CAPACITY);
             outHashes[i].x = -texID[idx]-1; 
         }
 

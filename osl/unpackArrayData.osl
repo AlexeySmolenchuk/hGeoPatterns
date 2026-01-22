@@ -11,6 +11,14 @@ shader unpackArrayData (
     output vector v5 = data.v5,
     output vector v6 = data.v6,
     output vector v7 = data.v7,
+    output vector v8 = data.v8,
+    output vector v9 = data.v9,
+    output vector v10 = data.v10,
+    output vector v11 = data.v11,
+    output vector v12 = data.v12,
+    output vector v13 = data.v13,
+    output vector v14 = data.v14,
+    output vector v15 = data.v15,
 
     output int num = data.num,
     // output int meshID = data.meshID

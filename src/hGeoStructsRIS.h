@@ -12,6 +12,14 @@
 		k_##name##_v5, \
 		k_##name##_v6, \
 		k_##name##_v7, \
+		k_##name##_v8, \
+		k_##name##_v9, \
+		k_##name##_v10, \
+		k_##name##_v11, \
+		k_##name##_v12, \
+		k_##name##_v13, \
+		k_##name##_v14, \
+		k_##name##_v15, \
 	k_##name##_ArrayDataEnd,
 
 
@@ -27,6 +35,14 @@
 		RixSCParamInfo(RtUString("v5"),       k_RixSCFloat3,   mode), \
 		RixSCParamInfo(RtUString("v6"),       k_RixSCFloat3,   mode), \
 		RixSCParamInfo(RtUString("v7"),       k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v8"),       k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v9"),       k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v10"),      k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v11"),      k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v12"),      k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v13"),      k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v14"),      k_RixSCFloat3,   mode), \
+		RixSCParamInfo(RtUString("v15"),      k_RixSCFloat3,   mode), \
 	RixSCParamInfo(RtUString("ArrayData"),   RtUString(name), k_RixSCStructEnd, mode),
 
 #define ARRAY_DATA_IN(name) ARRAY_DATA_STRUCT(name, k_RixSCInput)

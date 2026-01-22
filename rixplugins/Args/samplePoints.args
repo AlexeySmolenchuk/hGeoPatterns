@@ -32,9 +32,9 @@
         type="int"
         default="1"
         min="1"
-        max="8"
+        max="16"
         connectable="False">
-        <help>Number of Points to Sample (up to 8)</help>
+        <help>Number of Points to Sample (up to 16)</help>
     </param>
 
     <param name="coordsys"

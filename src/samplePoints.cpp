@@ -310,8 +310,8 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 	RtInt* IdxA_num = (RtInt*) out[k_IdxA_num].value;
 	RtInt* DistA_num = (RtInt*) out[k_DistA_num].value;
 
-	RtFloat3 *resultI[8];
-	RtFloat3 *resultD[8];
+	RtFloat3 *resultI[16];
+	RtFloat3 *resultD[16];
 	for (int n=0; n<data->numPoints; n++)
 	{
 		resultI[n] = (RtFloat3*) out[k_IdxA_v0+n].value;

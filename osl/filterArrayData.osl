@@ -8,8 +8,8 @@ shader filterArrayData (
     output color filtered = 0
 )
 {
-    vector values[8] = {0,0,0,0,0,0,0,0};
-    float weights[8] = {0,0,0,0,0,0,0,0};
+    vector values[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    float weights[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
     int n = ValuesA.num;
     if (n==0)
@@ -23,6 +23,14 @@ shader filterArrayData (
     if (n>5) values[5] = ValuesA.v5;
     if (n>6) values[6] = ValuesA.v6;
     if (n>7) values[7] = ValuesA.v7;
+    if (n>8) values[8] = ValuesA.v8;
+    if (n>9) values[9] = ValuesA.v9;
+    if (n>10) values[10] = ValuesA.v10;
+    if (n>11) values[11] = ValuesA.v11;
+    if (n>12) values[12] = ValuesA.v12;
+    if (n>13) values[13] = ValuesA.v13;
+    if (n>14) values[14] = ValuesA.v14;
+    if (n>15) values[15] = ValuesA.v15;
 
              weights[0] = 1.0;
     if (n>1) weights[1] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v1.x ) * 2, sharpness);
@@ -32,6 +40,14 @@ shader filterArrayData (
     if (n>5) weights[5] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v5.x ) * 2, sharpness);
     if (n>6) weights[6] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v6.x ) * 2, sharpness);
     if (n>7) weights[7] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v7.x ) * 2, sharpness);
+    if (n>8) weights[8] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v8.x ) * 2, sharpness);
+    if (n>9) weights[9] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v9.x ) * 2, sharpness);
+    if (n>10) weights[10] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v10.x ) * 2, sharpness);
+    if (n>11) weights[11] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v11.x ) * 2, sharpness);
+    if (n>12) weights[12] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v12.x ) * 2, sharpness);
+    if (n>13) weights[13] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v13.x ) * 2, sharpness);
+    if (n>14) weights[14] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v14.x ) * 2, sharpness);
+    if (n>15) weights[15] = pow( DistA.v0.x / ( DistA.v0.x + DistA.v15.x ) * 2, sharpness);
 
 
     float overal_weight = 0;

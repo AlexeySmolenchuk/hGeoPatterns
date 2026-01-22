@@ -307,9 +307,9 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 
 	out[k_ValuesA_num].value = numValues;
 
-	RtFloat3 const *idxs[8];
+	RtFloat3 const *idxs[16];
 
-	RtFloat3 *resultV[8];
+	RtFloat3 *resultV[16];
 	for (int n=0; n<*numValues; n++)
 	{
 		sCtx->EvalParam(k_IdxA_v0+n, -1, &idxs[n]);
