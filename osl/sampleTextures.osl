@@ -119,7 +119,7 @@ shader sampleTextures(
     {
         if (useProbabilityArray)
         {
-            for (int i = 0; i < arraylength(inTextures); i++)
+            for (int i = 0; i < CAPACITY; i++)
             {
                 cdf[numTextures] = cdfMax;
                 if (inTextures[i] != "")
@@ -134,7 +134,7 @@ shader sampleTextures(
         }
         else
         {
-            for (int i = 0; i < arraylength(inTextures); i++)
+            for (int i = 0; i < CAPACITY; i++)
             {
                 if (inTextures[i] != "")
                 {
@@ -173,23 +173,25 @@ shader sampleTextures(
                         else
                             idx = inHashes[i].x * numTextures;
 
-                       // Early exit if Zero scale
+                        // Early exit if Zero scale
                         if (useScalesArray && inScales[idx]==0)
                             continue;
 
                         if (useTextureID)
                         {
                             int texIdx = -int(round(inHashes[i].x))-1;
+                            texIdx = clamp(texIdx, 0, CAPACITY-1);
                             textureFile = inTextures[texIdx];
                             alphaTextureFile = inAlphaTextures[texIdx];
+                            uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[texIdx]) + 0.5 : inCoords[i];
                         }
                         else
                         {
                             textureFile = nonEmptyTextures[idx];
                             alphaTextureFile = nonEmptyAlphaTextures[idx];
+                            uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
                         }
 
-                        uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
                     }
                     else
                     {
@@ -198,48 +200,53 @@ shader sampleTextures(
                         uv = inCoords[i];
                     }
 
-                    if ((abs(uv.x - 0.5) < 0.5) && (abs(uv.y - 0.5) < 0.5))
+                    if (textureFile != "")
                     {
-                        if (separateAlpha)
+                        if ((abs(uv.x - 0.5) < 0.5) && (abs(uv.y - 0.5) < 0.5))
                         {
-                            color rgb = texture(textureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
-                            float tex_alpha = texture(alphaTextureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i];
-                            outResult += rgb * tex_alpha * (1-outAlpha) * inWeights[i];
-                            outAlpha = 1.0 - (1.0 - outAlpha) * (1.0 - tex_alpha);
-                            DBG += color(2,0,0);
-                        }
-                        else
-                        {
-                            int channels = 0;
-                            gettextureinfo (textureFile, "channels", channels);
-
-                            if (channels>3)
+                            if (separateAlpha)
                             {
-                                float tex_alpha = 1;
-                                color rgb = texture(textureFile, uv.x, 1-uv.y, "alpha", tex_alpha, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                                color rgb = texture(textureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                                float tex_alpha = texture(alphaTextureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i];
                                 outResult += rgb * tex_alpha * (1-outAlpha) * inWeights[i];
                                 outAlpha = 1.0 - (1.0 - outAlpha) * (1.0 - tex_alpha);
-                                DBG += color(1,0,0);
+                                DBG += color(2,0,0);
                             }
                             else
                             {
-                                outResult = texture(textureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
-                                outAlpha = 1.0;
-                                DBG += color(1,0,0);
-                                break;
+                                int channels = 0;
+                                gettextureinfo (textureFile, "channels", channels);
+
+                                if (channels>3)
+                                {
+                                    float tex_alpha = 1;
+                                    color rgb = texture(textureFile, uv.x, 1-uv.y, "alpha", tex_alpha, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                                    outResult += rgb * tex_alpha * (1-outAlpha) * inWeights[i];
+                                    outAlpha = 1.0 - (1.0 - outAlpha) * (1.0 - tex_alpha);
+                                    DBG += color(1,0,0);
+                                }
+                                else
+                                {
+                                    outResult = texture(textureFile, uv.x, 1-uv.y, "width", filter) * inWeights[i] * self_shadowing + self_offsetting;
+                                    outAlpha = 1.0;
+                                    DBG += color(1,0,0);
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    vector my_coords = vector(inCoords[i].x - 0.5, inCoords[i].y - 0.5, 0);
-                    float dist = length(my_coords);
-                    self_shadowing *= mix(shadowing, color(1.0), smoothstep(0.0, 0.75, dist));
-                    self_offsetting += mix(offsetting, 0, smoothstep(0.0, 0.75, dist));
+                        vector my_coords = vector(inCoords[i].x - 0.5, inCoords[i].y - 0.5, 0);
+                        float dist = length(my_coords);
+                        self_shadowing *= mix(shadowing, color(1.0), smoothstep(0.0, 0.75, dist));
+                        self_offsetting += mix(offsetting, 0, smoothstep(0.0, 0.75, dist));
+                    }
 
                     // TODO modify outWeights 
                 }
             }
-        }
+            else
+                break;
+        } 
 
         // DBG = self_shadowing;
     }
@@ -247,7 +254,7 @@ shader sampleTextures(
     {
         // Blending Mode
         outResult = 0;
-        outAlpha = 1.0;
+        outAlpha = 0.0;
 
         for (int i = 0; i < arraylength(inCoords); i++)
         {
@@ -272,11 +279,15 @@ shader sampleTextures(
                 if (useTextureID)
                 {
                     int texIdx = -int(round(inHashes[i].x))-1;
+                    texIdx = clamp(texIdx, 0, CAPACITY-1);
                     textureFile = inTextures[texIdx];
+                    uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[texIdx]) + 0.5 : inCoords[i];
                 }
                 else
+                {
                     textureFile = nonEmptyTextures[idx];
-                uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
+                    uv = useScalesArray ? ((inCoords[i] - 0.5) / inScales[idx]) + 0.5 : inCoords[i];
+                }
             }
             else
             {
@@ -284,14 +295,18 @@ shader sampleTextures(
                 uv = inCoords[i];
             }
 
-            // Force texture tiling
-            uv.x = uv.x - floor(uv.x);
-            uv.y = uv.y - floor(uv.y);
+            if (textureFile!="")
+            {
+                outAlpha += inWeights[i];
+                // Force texture tiling
+                uv.x = uv.x - floor(uv.x);
+                uv.y = uv.y - floor(uv.y);
 
-            vector temp = pow(texture(textureFile, uv.x, 1.0-uv.y, "width", filter)/0.18, gamma) * inWeights[i];
-            outWeights[i] = temp.x;
-            sum += temp.x;
-            outResult += temp;
+                vector temp = pow(texture(textureFile, uv.x, 1.0-uv.y, "width", filter)/0.18, gamma) * inWeights[i];
+                outWeights[i] = temp.x;
+                sum += temp.x;
+                outResult += temp;
+            }
         }
 
         outResult = pow(outResult, 1.0/gamma)*0.18;
@@ -300,7 +315,7 @@ shader sampleTextures(
 
         for (int i = 0; i < arraylength(inCoords); i++)
         {
-            outWeights[i]  *= inv;
+            outWeights[i] *= inv;
             DBG += inHashes[i] * outWeights[i];
         }
     }

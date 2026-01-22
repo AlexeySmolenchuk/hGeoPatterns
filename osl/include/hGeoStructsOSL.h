@@ -2,7 +2,7 @@
 
 struct ArrayData {
     int meshID;
-    int num;
+    int num;  // is 0 when Attribute not found by readAttribute
     vector v0;
     vector v1;
     vector v2;
