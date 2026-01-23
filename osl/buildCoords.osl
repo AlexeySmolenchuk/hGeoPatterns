@@ -102,7 +102,13 @@ shader buildCoords (
     float scalex = 1.0,
     float scaley = 1.0,
     vector defaultDirection = vector(0, 0, 1),
-    float sharpness = 10.0,
+    float sharpness = 0.5 [[
+        string label = "Sharpness",
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="0",
+        int connectable = 0,
+        ]],
     float angle = 0.0,
     float randomize = 1.0,
 
@@ -194,7 +200,7 @@ shader buildCoords (
                 outWeights[i] = 1.0;
             else
             {
-                outWeights[i] = pow(dist0 / (dist0 + distance(myP, pos[idx])) * 2, sharpness);
+                outWeights[i] = pow(dist0 / (dist0 + distance(myP, pos[idx])) * 2, 5/(1-min(0.99, sharpness)));
                 outWeights[i] = linearstep(0.01, 0.99, outWeights[i]);
             }
 
