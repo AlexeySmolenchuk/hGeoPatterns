@@ -1,5 +1,5 @@
-#include "RixPattern.h"
-#include "RixPredefinedStrings.hpp"
+#include <RixPattern.h>
+#include <RixPredefinedStrings.hpp>
 
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPacked.h>
