@@ -1,0 +1,102 @@
+<args format="1.0">
+    <shaderType>
+        <tag value="pattern"/>
+    </shaderType>
+    <help>
+        Point Cloud Filter
+    </help>
+
+    <param name="position"
+        label="Position"
+        type="color"
+        widget="null">
+    </param>
+
+    <param name="filename"
+        label="Filename"
+        type="string"
+        widget="fileInput"
+        connectable="True">
+        <help>Geometry Filename</help>
+    </param>
+
+    <param name="pointgroup"
+        label="Point Group"
+        type="string"
+        connectable="True">
+        <help>Point Group to search</help>
+    </param>
+
+    <param name="maxdist"
+        label="Max Search Distance"
+        type="float"
+        default="1">
+        <help>Search distance</help>
+    </param>
+
+    <param name="numPoints"
+        label="Number of Points"
+        type="int"
+        default="10"
+        min="1"
+        connectable="True">
+        <help>Number of Points to Sample (up to 16)</help>
+    </param>
+
+    <param name="coordsys"
+        label="Coordinate System"
+        type="string"
+        default="object"
+        connectable="False"
+        widget="popup"
+        options="object|world"
+        editable="True"
+        houdiniui="oplist">
+        <help>Not Applicable for connected position and __Pref</help>
+    </param>
+
+    <param name="frame"
+        label="Frame"
+        type="float"
+        connectable="False"
+        default="0">
+        <help>Frame to Sample Geometry (For Alembic and USD)</help>
+    </param>
+
+    <param name="fps"
+        label="FPS"
+        type="float"
+        connectable="False"
+        default="24">
+        <help>Frames per Second (For Alembic)</help>
+    </param>
+
+    <param name="attribute"
+        label="Filter Attribute"
+        type="string"
+        default="Cd"
+        connectable="True">
+    </param>
+
+    <param name="matchVex"
+        label="Match VEX pcfilter"
+        type="int"
+        default="0"
+        widget="checkBox">
+    </param>
+
+    <param name="smoothBorders"
+        label="Smooth Borders"
+        type="int"
+        default="0"
+        conditionalVisPath="../matchVex"
+        conditionalVisOp="equalTo"
+        conditionalVisValue="0"
+        widget="checkBox">
+    </param>
+
+    <output name="Value"
+        type="color">
+    </output>
+
+</args>

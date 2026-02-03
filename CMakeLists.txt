@@ -45,6 +45,7 @@ set (rixplugin_names
     interpolator
     sampleVolume
     oceanSampleLayers
+    pointCloudFilter
     )
 
 foreach (rixplugin_name ${rixplugin_names})
