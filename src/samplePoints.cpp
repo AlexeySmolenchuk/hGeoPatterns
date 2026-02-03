@@ -177,7 +177,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 
 		if (it == m_trees.end())
 		{
-			GU_Detail * gdp = new GU_Detail;
+			GU_Detail *gdp = new GU_Detail;
 			if (gdp->load(filename.CStr()).success())
 			{
 
@@ -345,16 +345,13 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 		}
 	}
 
-	UT_Vector3 pos;
 	GEO_PointTree::IdxArrayType plist;
 	UT_FloatArray distances;
 	int found = -1;
-
+	
 	for (int i = 0; i < sCtx->numPts; ++i)
 	{
-		pos.x() = Pw[i].x;
-		pos.y() = Pw[i].y;
-		pos.z() = Pw[i].z;
+		UT_Vector3 pos(Pw[i].x, Pw[i].y, Pw[i].z);
 		found = data->tree->findNearestGroupIdx(pos, FLT_MAX, data->numPoints, plist, distances);
 
 		//number of sampled points

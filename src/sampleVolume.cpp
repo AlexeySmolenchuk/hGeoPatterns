@@ -153,7 +153,7 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 	if (filename.Empty())
 		return;
 
-	GU_Detail * gdp;
+	GU_Detail *gdp;
 
 	auto it = m_geo.find(filename);
 	if (it == m_geo.end())

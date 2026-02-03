@@ -6,7 +6,7 @@
 #include <GU/GU_Detail.h>
 #include <GEO/GEO_Primitive.h>
 
-#include <map>
+#include <unordered_map>
 
 class interpolator: public RixPattern
 {
@@ -151,7 +151,7 @@ void interpolator::CreateInstanceData(RixContext& ctx,
 
 	if (it == m_geo.end())
 	{
-		GU_Detail * gdp = new GU_Detail;
+		GU_Detail *gdp = new GU_Detail;
 		if (gdp->load(filename.CStr()).success())
 		{
 			m_geo[filename] = gdp;
@@ -207,7 +207,7 @@ interpolator::ComputeOutputParams(RixShadingContext const *sCtx,
 	Data const* data = static_cast<Data const*>(instanceData);
 
 	GU_Detail *gdp;
-	GA_Attribute *attribute;
+	GA_Attribute *attribute = nullptr;
 
 	if (data->attribute)
 	{
@@ -225,7 +225,7 @@ interpolator::ComputeOutputParams(RixShadingContext const *sCtx,
 		auto it = m_attributes.find(key);
 		if (it == m_attributes.end())
 		{
-			attribute = gdp->findVertexAttribute( data->attributeName.CStr() );
+							attribute = gdp->findVertexAttribute( data->attributeName.CStr() );
 			if (!attribute) attribute = gdp->findPointAttribute( data->attributeName.CStr() );
 			if (!attribute) attribute = gdp->findPrimitiveAttribute( data->attributeName.CStr() );
 			m_attributes[key] = attribute;
@@ -267,7 +267,6 @@ interpolator::ComputeOutputParams(RixShadingContext const *sCtx,
 			out[i].value = pool.AllocForPattern<RtColorRGB>(sCtx->numPts);
 		}
 	}
-
 
 
 	RtColorRGB *result = (RtColorRGB*) out[k_value].value;

@@ -5,7 +5,7 @@
 
 #include <GU/GU_Detail.h>
 
-#include <map>
+#include <unordered_map>
 
 class readAttribute: public RixPattern
 {
@@ -149,7 +149,7 @@ void readAttribute::CreateInstanceData(RixContext& ctx,
 
 	if (it == m_geo.end())
 	{
-		GU_Detail * gdp = new GU_Detail;
+		GU_Detail *gdp = new GU_Detail;
 		if (gdp->load(filename.CStr()).success())
 		{
 			m_geo[filename] = gdp;
@@ -177,8 +177,9 @@ void readAttribute::CreateInstanceData(RixContext& ctx,
 	}
 
 	GA_Attribute *attrib = data->gdp->findPointAttribute(attribName.CStr());
-	if (attrib){
-		int storage =  attrib->getStorageClass();
+	if (attrib)
+	{
+		int storage = attrib->getStorageClass();
 		int size = attrib->getTupleSize();
 		if ((storage==0 || storage==1) && (size==1 || size==3))
 		{
@@ -227,7 +228,8 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 		if (it == m_attributes.end())
 		{
 			GA_Attribute *attrib = gdp->findPointAttribute(data->attributeName.CStr());
-			if (attrib){
+			if (attrib)
+			{
 				int storage =  attrib->getStorageClass();
 				int size = attrib->getTupleSize();
 				if ((storage==0 || storage==1) && (size==1 || size==3))
@@ -321,7 +323,8 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 	UT_Vector3 attr;
 
 	GA_ROHandleV3 handle_v(gdp, GA_ATTRIB_POINT, data->attributeName.CStr());
-	if (handle_v.isValid()){
+	if (handle_v.isValid())
+	{
 		for (int i = 0; i < sCtx->numPts; ++i)
 		{
 			for (int n=0; n<*numValues; n++)
@@ -334,7 +337,8 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 	}
 
 	GA_ROHandleF handle_f(gdp, GA_ATTRIB_POINT, data->attributeName.CStr());
-	if (handle_f.isValid()){
+	if (handle_f.isValid())
+	{
 		for (int i = 0; i < sCtx->numPts; ++i)
 		{
 			for (int n=0; n<*numValues; n++)
@@ -348,7 +352,8 @@ readAttribute::ComputeOutputParams(RixShadingContext const *sCtx,
 	return 1;
 
 	GA_ROHandleI handle_i(gdp, GA_ATTRIB_POINT, data->attributeName.CStr());
-	if (handle_i.isValid()){
+	if (handle_i.isValid())
+	{
 		for (int i = 0; i < sCtx->numPts; ++i)
 		{
 			for (int n=0; n<*numValues; n++)
