@@ -1,9 +1,14 @@
 *.so
 *.dylib
 *.dll
+*.ilk
+*.pdb
 
 .vscode
 build
 *.hda
 *.oso
 *.tex
+
+.clang-*
+.cache

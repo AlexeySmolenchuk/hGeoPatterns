@@ -60,6 +60,46 @@
 					"typeName":"vector",
 					"name":"v7",
 					"label":"v7"
+				},
+				{
+					"typeName":"vector",
+					"name":"v8",
+					"label":"v8"
+				},
+				{
+					"typeName":"vector",
+					"name":"v9",
+					"label":"v9"
+				},
+				{
+					"typeName":"vector",
+					"name":"v10",
+					"label":"v10"
+				},
+				{
+					"typeName":"vector",
+					"name":"v11",
+					"label":"v11"
+				},
+				{
+					"typeName":"vector",
+					"name":"v12",
+					"label":"v12"
+				},
+				{
+					"typeName":"vector",
+					"name":"v13",
+					"label":"v13"
+				},
+				{
+					"typeName":"vector",
+					"name":"v14",
+					"label":"v14"
+				},
+				{
+					"typeName":"vector",
+					"name":"v15",
+					"label":"v15"
 				}
 			],
 			"definitionCode":"#include <hGeoStructsOSL.h>"

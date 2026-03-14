@@ -1,32 +1,34 @@
 #include <RixPattern.h>
 #include <RixPredefinedStrings.hpp>
 
-#include "hGeoStructsRIS.h"
-
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPacked.h>
 #include <GEO/GEO_PointTree.h>
 #include <GOP/GOP_Manager.h>
 
+#include <RixShading.h>
 #include <unordered_map>
 
-class samplePoints: public RixPattern
+class pointCloudFilter: public RixPattern
 {
 public:
 	enum paramId
 	{
 		// outputs
-		ARRAY_DATA_IDS(IdxA)
-		ARRAY_DATA_IDS(DistA)
+		k_value,
 
 		// inputs
 		k_position,
 		k_filename,
 		k_pointgroup,
+		k_maxdist,
 		k_numPoints,
 		k_coordsys,
 		k_frame,
 		k_fps,
+		k_attributeName,
+		k_matchVex,
+		k_smoothBorders,
 
 		// end of list
 		k_numParams
@@ -34,10 +36,12 @@ public:
 
 	struct Data
 	{
-		RtInt numPoints;
 		RtUString coordsys;
-		GU_Detail *gdp;
+		RtUString attributeName;
 		GEO_PointTreeGAOffset *tree;
+		GU_Detail *gdp;
+		bool matchVex;
+		bool smoothBorders;
 	};
 
 	int Init(RixContext &ctx, RtUString const pluginpath) override;
@@ -85,7 +89,7 @@ private:
 
 
 int
-samplePoints::Init(RixContext &ctx, RtUString const pluginpath)
+pointCloudFilter::Init(RixContext &ctx, RtUString const pluginpath)
 {
 	PIXAR_ARGUSED(ctx);
 	PIXAR_ARGUSED(pluginpath);
@@ -98,34 +102,37 @@ samplePoints::Init(RixContext &ctx, RtUString const pluginpath)
 
 
 void
-samplePoints::Finalize(RixContext &ctx)
+pointCloudFilter::Finalize(RixContext &ctx)
 {
+	PIXAR_ARGUSED(ctx);
 	for (auto item: m_trees)
 	{
 		delete item.second.first; // gdp
 		delete item.second.second; // tree
 	}
-	PIXAR_ARGUSED(ctx);
 }
 
 
 RixSCParamInfo const*
-samplePoints::GetParamTable()
+pointCloudFilter::GetParamTable()
 {
 	static RixSCParamInfo s_ptable[] =
 	{
 		// outputs
-		ARRAY_DATA_OUT("IdxA")
-		ARRAY_DATA_OUT("DistA")
+		RixSCParamInfo(RtUString("Value"),		k_RixSCColor, k_RixSCOutput),
 
 		// inputs
-		RixSCParamInfo(RtUString("position"), k_RixSCColor),
-		RixSCParamInfo(RtUString("filename"), k_RixSCString),
-		RixSCParamInfo(RtUString("pointgroup"), k_RixSCString),
-		RixSCParamInfo(RtUString("numPoints"), k_RixSCInteger),
-		RixSCParamInfo(RtUString("coordsys"), k_RixSCString),
-		RixSCParamInfo(RtUString("frame"), k_RixSCFloat),
-		RixSCParamInfo(RtUString("fps"), k_RixSCFloat),
+		RixSCParamInfo(RtUString("position"),	k_RixSCColor),
+		RixSCParamInfo(RtUString("filename"),	k_RixSCString),
+		RixSCParamInfo(RtUString("pointgroup"),	k_RixSCString),
+		RixSCParamInfo(RtUString("maxdist"),	k_RixSCFloat),
+		RixSCParamInfo(RtUString("numPoints"),	k_RixSCInteger),
+		RixSCParamInfo(RtUString("coordsys"),	k_RixSCString),
+		RixSCParamInfo(RtUString("frame"),		k_RixSCFloat),
+		RixSCParamInfo(RtUString("fps"),		k_RixSCFloat),
+		RixSCParamInfo(RtUString("attribute"),	k_RixSCString),
+		RixSCParamInfo(RtUString("matchVex"),	k_RixSCInteger),
+		RixSCParamInfo(RtUString("smoothBorders"),	k_RixSCInteger),
 
 		// end of table
 		RixSCParamInfo()
@@ -134,7 +141,7 @@ samplePoints::GetParamTable()
 }
 
 
-void samplePoints::CreateInstanceData(RixContext& ctx,
+void pointCloudFilter::CreateInstanceData(RixContext& ctx,
 										RtUString const handle,
 										RixParameterList const* params,
 										InstanceData* instanceData)
@@ -153,9 +160,6 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	RtUString pointgroup = US_NULL;
 	params->EvalParam(k_pointgroup, -1, &pointgroup);
 
-	data->numPoints = 1;
-	params->EvalParam(k_numPoints, -1, &data->numPoints);
-
 	data->coordsys = Rix::k_object;
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
 
@@ -164,8 +168,23 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 	params->EvalParam(k_frame, -1, &frame);
 	params->EvalParam(k_fps, -1, &fps);
 
+	RtUString attribName("Cd");
+	params->EvalParam(k_attributeName, -1, &attribName);
+	data->attributeName = attribName;
+
+	int matchVex = 0;
+	params->EvalParam(k_matchVex, -1, &matchVex);
+	data->matchVex = matchVex;
+
+	int smoothBorders = 0;
+	params->EvalParam(k_smoothBorders, -1, &smoothBorders);
+	data->smoothBorders = smoothBorders;
+
 	data->gdp = nullptr;
 	data->tree = nullptr;
+
+	if (filename.Empty() || attribName.Empty())
+		return;
 
 	if (!filename.Empty())
 	{
@@ -201,6 +220,7 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 						}
 					}
 				}
+
 				GOP_Manager group_manager;
 				const GA_PointGroup* grp = nullptr;
 				if (!pointgroup.Empty())
@@ -224,24 +244,37 @@ void samplePoints::CreateInstanceData(RixContext& ctx,
 					idx++;
 				}
 				constexpr const char FILE_SIZE_UNITS[4][3] {"B", "KB", "MB", "GB"};
-				m_msg->Info("[hGeo::samplePoints] Loaded: %d points from %s %.1f %s (%s)", tree->entries(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
+				m_msg->Info("[hGeo::pointCloudFilter] Loaded: %d points from %s %.1f %s (%s)", tree->entries(), filename.CStr(), mem, FILE_SIZE_UNITS[idx], handle.CStr() );
 			}
 			else
-				m_msg->Warning("[hGeo::samplePoints] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
+				m_msg->Warning("[hGeo::pointCloudFilter] Can't read file: %s (%s)", filename.CStr(), handle.CStr() );
 		}
 		else
 		{
-			data->gdp = it->second.first;
 			data->tree = it->second.second;
+			data->gdp = it->second.first;
 		}
 	}
 
 	return;
 }
 
+float clamp(float x, float lowerlimit = 0.0f, float upperlimit = 1.0f) {
+  if (x < lowerlimit) return lowerlimit;
+  if (x > upperlimit) return upperlimit;
+  return x;
+}
+
+float smoothstep (float edge0, float edge1, float x) {
+   // Scale, and clamp x to 0..1 range
+   x = clamp((x - edge0) / (edge1 - edge0));
+
+   return x * x * (3.0f - 2.0f * x);
+}
+
 
 int
-samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
+pointCloudFilter::ComputeOutputParams(RixShadingContext const *sCtx,
 									int *nOutputs,
 									OutputSpec **outputs,
 									RtPointer instanceData,
@@ -266,8 +299,6 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 	*nOutputs = numOutputs;
 
 	// looping through the different output ids
-	bool connected = true; // possible optimization
-	int variable_num = 0;
 	for (int i = 0; i < numOutputs; ++i)
 	{
 		out[i].paramId = i;
@@ -278,45 +309,14 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 
 		sCtx->GetParamInfo(i, &type, &cinfo);
 
-		if (type == k_RixSCStructEnd)
-			continue;
-
-		else if (type == k_RixSCStructBegin)
+		if( type == k_RixSCColor )
 		{
-			variable_num = 0;
-		}
-
-		else if( connected && type == k_RixSCInteger )
-		{
-			out[i].detail = k_RixSCUniform;
-			out[i].value = pool.AllocForPattern<RtInt>(1);
-		}
-
-		else if( connected && type == k_RixSCFloat3 )
-		{
-			// Allocate only needed number of variables
-			if (variable_num < data->numPoints){
-				out[i].detail = k_RixSCVarying;
-				out[i].value = pool.AllocForPattern<RtFloat3>(sCtx->numPts);
-			}
-			variable_num++;
+			out[i].detail = k_RixSCVarying;
+			out[i].value = pool.AllocForPattern<RtColorRGB>(sCtx->numPts);
 		}
 	}
 
-	// as optimisation we pass pointer to loaded geometry to next reader
-	out[k_IdxA_meshID].value = (RtInt*)data->gdp;
-	out[k_DistA_meshID].value = (RtInt*)data->gdp;
-
-	RtInt* IdxA_num = (RtInt*) out[k_IdxA_num].value;
-	RtInt* DistA_num = (RtInt*) out[k_DistA_num].value;
-
-	RtFloat3 *resultI[16];
-	RtFloat3 *resultD[16];
-	for (int n=0; n<data->numPoints; n++)
-	{
-		resultI[n] = (RtFloat3*) out[k_IdxA_v0+n].value;
-		resultD[n] = (RtFloat3*) out[k_DistA_v0+n].value;
-	}
+	RtColorRGB *result = (RtColorRGB*) out[k_value].value;
 
 	RtFloat3 const *P;
 	RtFloat3 *Pw;
@@ -345,34 +345,88 @@ samplePoints::ComputeOutputParams(RixShadingContext const *sCtx,
 		}
 	}
 
+	const float *maxDistance;
+	RtFloat const maxDistanceDefault(1.0);
+	sCtx->EvalParam(k_maxdist, -1, &maxDistance, &maxDistanceDefault, true);
+
+	const int *numPoints;
+	int const numPointsDefault(10);
+	sCtx->EvalParam(k_numPoints, -1, &numPoints, &numPointsDefault, true);
+
 	GEO_PointTree::IdxArrayType plist;
 	UT_FloatArray distances;
-	int found = -1;
 	
+	GA_ROHandleV3 handle_v(data->gdp, GA_ATTRIB_POINT, data->attributeName.CStr());
+	GA_ROHandleF handle_f(data->gdp, GA_ATTRIB_POINT, data->attributeName.CStr());
+
 	for (int i = 0; i < sCtx->numPts; ++i)
 	{
+		result[i] = {0,0,0};
 		UT_Vector3 pos(Pw[i].x, Pw[i].y, Pw[i].z);
-		found = data->tree->findNearestGroupIdx(pos, FLT_MAX, data->numPoints, plist, distances);
 
-		//number of sampled points
-		for (int n=0; n<data->numPoints; n++)
+		int maxNumPoints = numPoints[i];
+
+		if (!data->matchVex)
+			maxNumPoints++;
+
+		const int found = data->tree->findNearestGroupIdx(pos, maxDistance[i], maxNumPoints, plist, distances);
+		if (!found)
+			continue;
+
+		if (handle_v.isValid())
 		{
-			if(n<found)
+			float weights = 0;
+			for (int n=0; n<found; n++)
 			{
-				resultD[n][i] = RtFloat3(sqrt(distances[n]));
-				resultI[n][i] = RtFloat3(plist[n]);
+				float weight = 0;
+
+				if (data->matchVex)
+					weight = smoothstep(sqrt(distances[found-1]) * 1.1, 0.f, sqrt(distances[n]));
+				else if (found==maxNumPoints)
+					weight = smoothstep(sqrt(distances[found-1]), 0.f, sqrt(distances[n]));
+				else
+					weight = smoothstep(maxDistance[i], 0.f, sqrt(distances[n]));
+				
+				UT_Vector3 attr = handle_v.get(plist[n]);
+				result[i] += RtColorRGB(attr.x(), attr.y(), attr.z()) * weight;
+
+				weights += weight;
 			}
-			else
+
+			if (weights>0)
+				result[i] /= weights;
+
+			if (!data->matchVex && data->smoothBorders)
+				result[i] *= smoothstep(0.0, 1.0, weights); 
+		}
+		else if (handle_f.isValid())
+		{
+			float weights = 0;
+			for (int n=0; n<found; n++)
 			{
-				resultD[n][i] = RtFloat3(-1);
-				resultI[n][i] = RtFloat3(-1);
+				float weight = 0;
+
+				if (data->matchVex)
+					weight = smoothstep(sqrt(distances[found-1]) * 1.1, 0.f, sqrt(distances[n]));
+				else if (found==maxNumPoints)
+					weight = smoothstep(sqrt(distances[found-1]), 0.f, sqrt(distances[n]));
+				else
+					weight = smoothstep(maxDistance[i], 0.f, sqrt(distances[n]));
+				
+				float attr = handle_f.get(plist[n]);
+				result[i] += RtColorRGB(attr) * weight;
+
+				weights += weight;
 			}
+
+			if (weights>0)
+				result[i] /= weights;
+
+			if (!data->matchVex && data->smoothBorders)
+				result[i] *= smoothstep(0.0, 1.0, weights); 
 		}
 
 	}
-
-	IdxA_num[0] = found;
-	DistA_num[0] = found;
 
 	return 0;
 }
@@ -382,10 +436,10 @@ RIX_PATTERNCREATE
 {
 	PIXAR_ARGUSED(hint);
 
-	return new samplePoints();
+	return new pointCloudFilter();
 }
 
 RIX_PATTERNDESTROY
 {
-	delete static_cast<samplePoints*>(pattern);
+	delete static_cast<pointCloudFilter*>(pattern);
 }

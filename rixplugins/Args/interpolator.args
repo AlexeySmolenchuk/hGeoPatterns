@@ -6,6 +6,17 @@
         Read attribute for specific ClosestData.
     </help>
 
+    <param name="ClosestData"
+        label="ClosestData"
+        type="struct"
+        struct_name="ClosestData"
+        widget="null">
+        <tags>
+            <tag value="struct"/>
+            <tag value="ClosestData"/>
+        </tags>
+    </param>
+
     <param name="filename"
         label="Filename Override"
         type="string"
@@ -18,18 +29,7 @@
         label="Attribute"
         type="string"
         default="P"
-        connectable="False">
-    </param>
-
-    <param name="ClosestData"
-        label="ClosestData"
-        type="struct"
-        struct_name="ClosestData"
-        widget="null">
-        <tags>
-            <tag value="struct"/>
-            <tag value="ClosestData"/>
-        </tags>
+        connectable="True">
     </param>
 
     <output name="Value"

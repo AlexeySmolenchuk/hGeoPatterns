@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(hGeoPatterns VERSION 1.2)
+project(hGeoPatterns VERSION 1.2 LANGUAGES CXX)
 
 # Please update variables for your OS
 if (MSVC)
@@ -45,6 +45,7 @@ set (rixplugin_names
     interpolator
     sampleVolume
     oceanSampleLayers
+    pointCloudFilter
     )
 
 foreach (rixplugin_name ${rixplugin_names})

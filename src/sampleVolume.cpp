@@ -1,5 +1,5 @@
-#include "RixPattern.h"
-#include "RixPredefinedStrings.hpp"
+#include <RixPattern.h>
+#include <RixPredefinedStrings.hpp>
 
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimVDB.h>
@@ -153,7 +153,7 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 	if (filename.Empty())
 		return;
 
-	GU_Detail * gdp;
+	GU_Detail *gdp;
 
 	auto it = m_geo.find(filename);
 	if (it == m_geo.end())

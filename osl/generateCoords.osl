@@ -1,0 +1,299 @@
+#define CAPACITY 16  // Currently generate 12 for hex or 9 for square tiling
+
+#define SPLAT 1
+
+struct Manifold{
+    point Q;
+    normal QN;
+    float Qradius;
+};
+
+#define DISTRIBUTION_TEXTURE_CONDITIONALS \
+    string conditionalVis1Path="../useDistributionTexture", \
+    string conditionalVis1Op="equalTo", \
+    string conditionalVis1Value="1", \
+    \
+    string conditionalVis2Path="../mode", \
+    string conditionalVis2Op="equalTo", \
+    string conditionalVis2Value="1", \
+    \
+    string conditionalVisLeft="conditionalVis1", \
+    string conditionalVisOp="and", \
+    string conditionalVisRight="conditionalVis2",
+
+
+shader generateCoords
+(
+    int mode = 0  [[
+        string widget = "mapper",
+        string options = "Blend:0|Splat:1",
+        int connectable = 0,
+        ]],
+
+    int grid = 1  [[
+        string widget = "mapper",
+        string options = "square:0|hexagonal:1",
+        int connectable = 0,
+        ]],
+    float frequency = 1,
+    float jitter = 0.5,
+    float scale = 1,
+    float scaleRandom = 0,
+    float angle = 0,
+    float rotationRandom = 1,
+    int seed = 0,
+    float sharpness = 0.5  [[
+        string label = "Sharpness",
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="0",
+        int connectable = 0,
+        ]],
+    int useDistributionTexture = 0  [[
+        string widget = "checkBox",
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="1",
+        int connectable = 0,
+        ]],
+    string distributionTexture = ""  [[
+        string widget = "fileInput",
+        string label = "Distribution Texture",
+        string options = "texture",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float l = 0  [[
+        string label = "Clamp Min",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float h = 1  [[
+        string label = "Clamp Max",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float e = 1  [[
+        string label = "Exponent",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    Manifold textureManifold = {0},
+
+    output vector outCoords[CAPACITY] = {0},
+    output vector outHashes[CAPACITY] = {0},
+    output float outWeights[CAPACITY] = {0},
+    output color DBG = 0,
+)
+{
+    int hexagonal = grid;
+    vector uv;
+
+    if(isconnected(textureManifold))
+    {
+        uv = textureManifold.Q;
+    }
+    else
+    {
+        // u and v are global variables representing
+        // primitives parametric coordinates
+        float _uv[2] = {u, v};
+
+        // st - is user defined texture coordinates
+        getattribute("primvar", "st", _uv);
+        uv = vector(_uv[0], 1 - _uv[1], 0);
+    }
+
+    uv *= vector(frequency, frequency, 0);
+
+    for (int i = 0; i < CAPACITY; i++)
+    {
+        outCoords[i] = 0;
+        outWeights[i] = 0;
+    }
+
+    vector shifts[12];
+    int num_evaluations = 0;
+    if (hexagonal)
+    {
+        // Squash uv's
+        uv.y *= 2/sqrt(3.0);
+        uv.x += 0.5 * uv.y;
+        vector local_uv = mod(uv,1.0);
+        int flip = mod(uv.x, 1.0) > mod(uv.y, 1.0);
+
+        shifts[0] = vector(0,0,0);
+        shifts[1] = vector(1,1,0);
+        shifts[2] = vector(1,0,0);
+        shifts[3] = vector(0,1,0);
+        shifts[4] = vector(-1,0,0);
+        shifts[5] = vector(0,-1,0);
+        shifts[6] = vector(-1,-1,0);
+        shifts[7] = vector(2,1,0);
+        shifts[8] = vector(1,2,0);
+        shifts[9] = vector(2,2,0);
+        shifts[10] = flip ? vector(1,-1,0) : vector(-1,1,0);
+        shifts[11] = flip ? vector(2,0,0) : vector(0,2,0);
+        num_evaluations = 12;
+    }
+    else
+    {
+        // Regular square tiling
+        shifts[0] = vector(0.5,0.5,0);
+        shifts[1] = vector(-0.5,0.5,0);
+        shifts[2] = vector(-0.5,1.5,0);
+        shifts[3] = vector(0.5,1.5,0);
+        shifts[4] = vector(1.5,1.5,0);
+        shifts[5] = vector(1.5,0.5,0);
+        shifts[6] = vector(1.5,-0.5,0);
+        shifts[7] = vector(0.5,-0.5,0);
+        shifts[8] = vector(-0.5,-0.5,0);
+        num_evaluations = 9;
+    }
+
+    vector r[CAPACITY];
+    // Use .x component of this array for unambiguous sorting. Exported as outHashes if coverage <-> texture selection correlation is desired.
+    // Use .y - random tile rotation.
+    // Use .z - probability by distribution texture.
+    for (int i=0; i<num_evaluations; i++)
+    {
+        vector cell = floor(uv) + shifts[i];
+        r[i] = hashnoise(cell + vector(seed));
+    }
+
+    int sorted[CAPACITY] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
+    // Sort splats by stable uv-coord cell based hash
+    // This guaranties consistent overlapping
+    if (mode==SPLAT)
+        for (int i=0; i<num_evaluations; i++)
+        {
+            for (int j=i+1; j<num_evaluations; j++)
+            {
+                if (r[sorted[i]].x > r[sorted[j]].x)
+                {
+                    int tmp = sorted[i];
+                    sorted[i] = sorted[j];
+                    sorted[j] = tmp;
+                }
+            }
+        }
+
+    float frequencyInv = 1.0/frequency;
+
+    float closestDist = 1000000000;
+    float distances[CAPACITY];
+
+
+    for (int i = 0; i < num_evaluations; i++)
+    {
+        int idx = sorted[i];
+        vector cell = floor(uv) + shifts[sorted[i]];
+
+        vector rand = r[sorted[i]];
+        outHashes[i] = rand;
+
+        float x = cell.x * frequencyInv;
+        float y = cell.y * frequencyInv;
+
+        if (hexagonal)
+        {
+            // Unsquash cells uv's to cartesian
+            x -= 0.5 * y;
+            y *= sqrt(3)*0.5;
+        }
+
+        if (mode==SPLAT && useDistributionTexture && distributionTexture != "")
+        {
+            float probability = luminance(texture(distributionTexture, x, y));
+            probability = pow(linearstep(l, h, probability), e);
+            if ( rand.z > probability)
+                continue;
+        }
+
+        float rotation = angle + (rand.y - 0.5) * rotationRandom;
+        rotation *= 2 * M_PI;
+
+        vector temp = hashnoise(rand);
+        vector jitterDirection = {temp.x - 0.5, temp.y - 0.5, 0};
+        float randomizedScale = mix(scale/(1 + scaleRandom*0.5), scale*(1 + scaleRandom*0.5) , temp.z);
+
+        if (hexagonal)
+        {
+            // Squash random value
+            jitterDirection.y *= 2/sqrt(3.0);
+            jitterDirection.x += 0.5 * jitterDirection.y;
+        }
+
+        vector cellJittered = cell + jitterDirection * jitter;
+
+        vector current = (uv - cellJittered) / randomizedScale;
+        current.y *= -1;
+
+        if (hexagonal)
+        {
+            // Unsquash uv's to cartesian
+            current.x += 0.5 * current.y;
+            current.y *= sqrt(3)*0.5;
+        }
+
+        if (rotation != 0)
+            current = vector( cos(rotation)*current.x - sin(rotation)*current.y,
+                              sin(rotation)*current.x + cos(rotation)*current.y, 0);
+
+        outCoords[i] = current + 0.5;
+        // TODO Maybe separate parameter for random offset within cell?
+        outCoords[i] += jitterDirection * jitter * 2;
+
+        float w = 1.0;
+
+        if (mode==SPLAT)
+        {
+            outWeights[i] = w;
+            idx++;
+
+            vector tmp = abs(outCoords[i]-0.5);
+            float d = max(tmp.x, tmp.y);
+            float frame = (d < 0.5) ? (d < 0.49) ? 0.1 : 1 : 0;
+            DBG += outHashes[i] * frame * outWeights[i];
+        }
+        else
+        {
+            float dist = length(current);
+            distances[i] = dist;
+
+            if (closestDist > dist)
+                closestDist = dist;
+
+        }
+    }
+
+    if (mode==SPLAT)
+        return;
+
+    // Once we know closestDist we can calculate weighting
+    float overall_weight = 0;
+    for (int i = 0; i<num_evaluations; i++)
+    {
+        float dist = distances[i];
+        outWeights[i] = pow( closestDist / ( closestDist + dist ) * 2, 5/(1-min(0.99, sharpness)));
+        outWeights[i] = linearstep(0.01, 0.99, outWeights[i]);
+        overall_weight += outWeights[i];
+    }
+
+    float inv = 1.0/overall_weight;
+
+    for (int i = 0; i<num_evaluations; i++)
+    {
+    //     float frame = 1;
+    //     if (mode==SPLAT)
+            outWeights[i] *= inv;
+    //     else
+    //         frame =  (abs(outCoords[i].x-0.5) > 0.49) || (abs(outCoords[i].y-0.5) > 0.49) ? 1 : 0.25;
+
+        DBG += outHashes[i] * outWeights[i];
+    }
+
+    // DBG = num_evaluations;
+
+}

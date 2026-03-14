@@ -1,5 +1,5 @@
-#include "RixPattern.h"
-#include "RixPredefinedStrings.hpp"
+#include <RixPattern.h>
+#include <RixPredefinedStrings.hpp>
 
 #include "hGeoStructsRIS.h"
 
@@ -344,20 +344,15 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 		}
 	}
 
-	UT_Vector3 pos;
-
 	const float *maxd;
 	RtFloat const dflt(1E18F);
 	sCtx->EvalParam(k_maxdist, -1, &maxd, &dflt, true);
-
-
+	
 	GU_MinInfo min_info;
 	GA_PrimitiveTypeId primtype;
 	for (int i = 0; i < sCtx->numPts; ++i)
 	{
-		pos.x() = Pw[i].x;
-		pos.y() = Pw[i].y;
-		pos.z() = Pw[i].z;
+		UT_Vector3 pos(Pw[i].x, Pw[i].y, Pw[i].z);
 
 		min_info.init(maxd[i]*maxd[i]);
 		if (data->isect->minimumPoint( pos, min_info ))
