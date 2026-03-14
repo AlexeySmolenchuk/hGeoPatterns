@@ -1,5 +1,5 @@
-#include "RixPattern.h"
-#include "RixPredefinedStrings.hpp"
+#include <RixPattern.h>
+#include <RixPredefinedStrings.hpp>
 
 #include "hGeoStructsRIS.h"
 
@@ -8,9 +8,9 @@
 #include <GU/GU_PrimPacked.h>
 #include <GEO/GEO_Detail.h>
 #include <GEO/GEO_ConvertParms.h>
+#include <GOP/GOP_Manager.h>
 
-#include <map>
-#include <iostream>
+#include <unordered_map>
 
 class closest: public RixPattern
 {
@@ -164,7 +164,7 @@ void closest::CreateInstanceData(RixContext& ctx,
 	params->EvalParam(k_coordsys, -1, &data->coordsys);
 
 	float frame = 0;
-	float fps =0;
+	float fps = 24;
 	params->EvalParam(k_frame, -1, &frame);
 	params->EvalParam(k_fps, -1, &fps);
 
@@ -210,10 +210,11 @@ void closest::CreateInstanceData(RixContext& ctx,
 				convertParams.setFromType(GEO_PrimTypeCompat::GEOPRIMPOLYSOUP);
 				gdp->convert(convertParams);
 
-				GA_PrimitiveGroup* grp = nullptr;
+				GOP_Manager group_manager;
+				const GA_PrimitiveGroup* grp = nullptr;
 				if (!primgroup.Empty())
 				{
-					grp = gdp->findPrimitiveGroup(primgroup.CStr());
+					grp = group_manager.parsePrimitiveGroups(primgroup.CStr(), GOP_Manager::GroupCreator(gdp));
 					if (!grp)
 						return;
 				}
@@ -328,38 +329,30 @@ closest::ComputeOutputParams(RixShadingContext const *sCtx,
 	}
 	else
 	{
-		// __Pref and Po are not defined for volumes
-		if (sCtx->scTraits.volume != NULL)
+		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
+		if (pDetail == k_RixSCInvalidDetail)
 		{
-			sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
-		}
-		else
-		{
-			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
-			if (pDetail == k_RixSCInvalidDetail)
-			{
+			// __Pref and Po are not defined for volumes
+			if (sCtx->scTraits.volume != NULL)
+				sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+			else
 				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
-				Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
-				memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-				sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
-			}
+
+			Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+			memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+			sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 		}
 	}
-
-	UT_Vector3 pos;
 
 	const float *maxd;
 	RtFloat const dflt(1E18F);
 	sCtx->EvalParam(k_maxdist, -1, &maxd, &dflt, true);
-
-
+	
 	GU_MinInfo min_info;
 	GA_PrimitiveTypeId primtype;
 	for (int i = 0; i < sCtx->numPts; ++i)
 	{
-		pos.x() = Pw[i].x;
-		pos.y() = Pw[i].y;
-		pos.z() = Pw[i].z;
+		UT_Vector3 pos(Pw[i].x, Pw[i].y, Pw[i].z);
 
 		min_info.init(maxd[i]*maxd[i]);
 		if (data->isect->minimumPoint( pos, min_info ))

@@ -1,12 +1,11 @@
-#include "RixPattern.h"
-#include "RixPredefinedStrings.hpp"
+#include <RixPattern.h>
+#include <RixPredefinedStrings.hpp>
 
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimVDB.h>
 #include <GU/GU_PrimVolume.h>
 
 #include <map>
-#include <iostream>
 
 class sampleVolume: public RixPattern
 {
@@ -154,7 +153,7 @@ void sampleVolume::CreateInstanceData(RixContext& ctx,
 	if (filename.Empty())
 		return;
 
-	GU_Detail * gdp;
+	GU_Detail *gdp;
 
 	auto it = m_geo.find(filename);
 	if (it == m_geo.end())
@@ -272,21 +271,18 @@ sampleVolume::ComputeOutputParams(RixShadingContext const *sCtx,
 	}
 	else
 	{
-		// __Pref and Po are not defined for volumes
-		if (sCtx->scTraits.volume != NULL)
+		RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
+		if (pDetail == k_RixSCInvalidDetail)
 		{
-			sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
-		}
-		else
-		{
-			RixSCDetail pDetail = sCtx->GetPrimVar(RtUString("__Pref"), RtFloat3(0.0f), (const RtFloat3**)&Pw);
-			if (pDetail == k_RixSCInvalidDetail)
-			{
+			// __Pref and Po are not defined for volumes
+			if (sCtx->scTraits.volume != NULL)
+				sCtx->GetBuiltinVar(RixShadingContext::k_P, &P);
+			else
 				sCtx->GetBuiltinVar(RixShadingContext::k_Po, &P);
-				Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
-				memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
-				sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
-			}
+
+			Pw = pool.AllocForPattern<RtPoint3>(sCtx->numPts);
+			memcpy(Pw, P, sizeof(RtFloat3) * sCtx->numPts);
+			sCtx->Transform(RixShadingContext::k_AsPoints, Rix::k_current, data->coordsys, Pw, NULL);
 		}
 	}
 
