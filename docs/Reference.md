@@ -1,19 +1,19 @@
 ### [HOME](../Readme.md) / Reference
 
 #### C++/OSL Shaders
-**[buildCoords](buildCoords.md)**
-**[closest](closest.md)**
-**[displacementLayer](displacementLayer.md)**
-**[filterArrayData](filterArrayData.md)**
-**[generateCoords](generateCoords.md)**
-**[interpolator](interpolator.md)**
-**[oceanSampleLayers](oceanSampleLayers.md)**
-**[pointCloudFilter](pointCloudFilter.md)**
-**[readAttribute](readAttribute.md)**
-**[samplePoints](samplePoints.md)**
-**[sampleTextures](sampleTextures.md)**
-**[sampleVolume](sampleVolume.md)**
-**[utilityNodes](utilityNodes.md)**
+* [buildCoords](buildCoords.md)
+* [closest](closest.md)
+* [displacementLayer](displacementLayer.md)
+* [filterArrayData](filterArrayData.md)
+* [generateCoords](generateCoords.md)
+* [interpolator](interpolator.md)
+* [oceanSampleLayers](oceanSampleLayers.md)
+* [pointCloudFilter](pointCloudFilter.md)
+* [readAttribute](readAttribute.md)
+* [samplePoints](samplePoints.md)
+* [sampleTextures](sampleTextures.md)
+* [sampleVolume](sampleVolume.md)
+* [utilityNodes](utilityNodes.md)
 
 #### VOP structures
 Custom structures are defined in C++ and OSL headers. They are also defined as a Houdini Vop type in [`vop/structs.json`](../vop/hGeoStructs.json), which allows you to work with those structures in **OSL Generic Shader Builder**.

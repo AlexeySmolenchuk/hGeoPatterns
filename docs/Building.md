@@ -38,12 +38,9 @@ cmake ..
 cmake --build . --config Release -j8
 ```
 
-### Installation
+### [Installation](Installation.md)
 
-[Installation](Installation.md)
-
-
-## Other DCCs
+### Other DCCs
 If you want to build this plugin to use in other DCCs, you need Houdini installed on your machine. You need to minimize the number of dependencies. By default linking plugins to the whole Houdini package causes tons of dependencies, even unnecessary ones, which can cause library clashes. My solution would be to link to the HoudiniGEO library directly and manually provide all required FLAGS. On Linux, it looks like this:
 
 ```Cmake
