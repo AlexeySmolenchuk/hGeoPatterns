@@ -2,7 +2,7 @@
 
 C++ plugin
 
-Implements **pcopen > pcfilter** functionality in one shader. It can produce results matching to VEX pcfilter or compute smoother and continuous results with alternative filters.
+Implements **pcopen > pcfilter** functionality in one shader. It can produce results matching VEX pcfilter or compute smoother and continuous results with alternative filters.
 
 ![pointCloudFilter](pointCloudFilter.png)
 
