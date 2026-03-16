@@ -2,6 +2,8 @@
 
 OSL shader
 
+![texture bombing](bombing.scatter.0010.png)
+
 Building array of uv's from **[ArrayData](../osl/include/hGeoStructsOSL.h)** structures. Based on Positions, Normals, Directions etc. for fine control.
 Can be used for point cloud based texture bombing.
 
