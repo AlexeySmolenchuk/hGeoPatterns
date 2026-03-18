@@ -4,9 +4,9 @@ project(hGeoPatterns VERSION 1.3 LANGUAGES CXX)
 # Please update variables for your OS
 if (MSVC)
     # WINDOWS
-    SET(HFS "C:/Program Files/Side Effects Software/Houdini 20.5.445" CACHE PATH "Houdini Installation Folder")
-    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
-    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
+    SET(HFS "C:/Program Files/Side Effects Software/Houdini 21.0.631" CACHE PATH "Houdini Installation Folder")
+    SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-27.1" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-27.1" CACHE PATH "RendermanForHoudini Installation Folder")
 else()
     # LINUX
     SET(HFS "/opt/hfs20.5.445" CACHE PATH "Houdini Installation Folder")
@@ -87,9 +87,7 @@ add_custom_target(OSL
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/otls)
 add_custom_command(
     COMMAND  ${CMAKE_COMMAND} -E env
-        RMANTREE=${RMANTREE}
-        RFHTREE=${RFHTREE}
-        HOUDINI_PACKAGE_DIR=${PROJECT_SOURCE_DIR}/python
+        HOUDINI_PACKAGE_DIR=${RFHTREE}/packages
         ${HFS}/bin/hython
         ${PROJECT_SOURCE_DIR}/python/build_hda.py
         ${PROJECT_SOURCE_DIR}/otls/hGeoPatterns.hda
