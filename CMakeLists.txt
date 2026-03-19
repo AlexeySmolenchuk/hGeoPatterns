@@ -14,9 +14,10 @@ if (MSVC)
 else()
     # LINUX
     SET(HFS "/opt/hfs20.5.445" CACHE PATH "Houdini Installation Folder")
-    SET(RMANTREE "/opt/pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
-    SET(RFHTREE "/opt/pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
-    SET(RFH_HOUDINI_VERS "20.5.445" CACHE STRING "RendermanForHoudini build")
+    SET(RMANTREE "/opt/pixar/RenderManProServer-27.1" CACHE PATH "RendermanProServer Installation Folder")
+    SET(RFHTREE "/opt/pixar/RenderManForHoudini-27.1" CACHE PATH "RendermanForHoudini Installation Folder")
+    # Not necessary match Houdini version
+    SET(RFH_HOUDINI_VERS "20.5.684" CACHE STRING "RendermanForHoudini build")
 endif()
 
 # prevent attempt to build right in the project
