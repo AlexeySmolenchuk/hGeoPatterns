@@ -1,6 +1,6 @@
-[HOME](../Readme.md)
+### [HOME](../Readme.md) / Building
 
-## Requirements
+### Requirements
 
 You need to have this software pre-installed:
 
@@ -19,7 +19,7 @@ Assuming you have installed RFH the way it's accessible from **hython**. This re
 #### Windows
 * **MSVC** - [version recommendations by SideFX](https://www.sidefx.com/docs/hdk/_h_d_k__intro__getting_started.html#HDK_Intro_Compiling_Intro_Windows)
 
-You can install one of these fo free:
+You can install one of these for free:
 * **[Visual Studio Community 2022](https://visualstudio.microsoft.com/downloads/#visual-studio-community-2022)**
 * **[Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)** - if you don't need IDE
 
@@ -27,7 +27,7 @@ You can install one of these fo free:
 * **GCC** - [version recommendations by SideFX](https://www.sidefx.com/docs/hdk/_h_d_k__intro__getting_started.html#HDK_Intro_GettingStarted_Compiling)
 
 
-## Building
+### Building
 Update values for **HFS**, **RMANTREE**, **RFHTREE** variables in the [CMakeLists.txt](../CMakeLists.txt#L4-L15)
 
 Then, assuming you opened terminal in the root of *hGeoPatterns*
@@ -38,16 +38,9 @@ cmake ..
 cmake --build . --config Release -j8
 ```
 
-## Installation
+### [Installation](Installation.md)
 
-#### Option A
-Add root directory of hGeoPatterns to **HOUDINI_PACKAGE_DIR** environment variable
-
-#### Option B
-Update the first variable in [*hGeoPatterns.json*](../hGeoPatterns.json#L4) with absolute path to plugin root folder and put it in your *$HOUDINI_USER_PREF_DIR/packages*
-
-
-## Other DCCs
+### Other DCCs
 If you want to build this plugin to use in other DCCs, you need Houdini installed on your machine. You need to minimize the number of dependencies. By default linking plugins to the whole Houdini package causes tons of dependencies, even unnecessary ones, which can cause library clashes. My solution would be to link to the HoudiniGEO library directly and manually provide all required FLAGS. On Linux, it looks like this:
 
 ```Cmake
@@ -81,5 +74,3 @@ export HOUDINI_VEX_PATH=${HGEOPATTERNS_PATH}/vex/CVex:'&'
 ```
 Now all shaders must work as expected and read all sorts of geometry formats Houdini can open.
 Tested on Linux with Katana6.0 and a variety of Houdini[19.5-20.5] and RenderMan[25.0-26.3] combinations.
-
-[HOME](../Readme.md)
