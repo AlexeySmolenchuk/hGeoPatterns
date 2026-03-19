@@ -11,6 +11,8 @@ if (MSVC)
     SET(HFS "C:/Program Files/Side Effects Software/Houdini 21.0.631" CACHE PATH "Houdini Installation Folder")
     SET(RMANTREE "C:/Program Files/Pixar/RenderManProServer-27.1" CACHE PATH "RendermanProServer Installation Folder")
     SET(RFHTREE "C:/Program Files/Pixar/RenderManForHoudini-27.1" CACHE PATH "RendermanForHoudini Installation Folder")
+    # Not necessary match Houdini version
+    SET(RFH_HOUDINI_VERS "21.0.559" CACHE STRING "RendermanForHoudini build")
 else()
     # LINUX
     SET(HFS "/opt/hfs20.5.445" CACHE PATH "Houdini Installation Folder")
@@ -35,18 +37,22 @@ file (GLOB args_files "rixplugins/Args/*.args")
 add_subdirectory(src)
 add_subdirectory(osl)
 
-if (NOT MSVC)
+if (MSVC)
     STRING(CONCAT PYTHONPATH
-        "${RFHTREE}/${_houdini_python_version}/${RFH_HOUDINI_VERS}/python${_houdini_python_version}libs:"
+        "${RMANTREE}/bin\\;"
+        "${RMANTREE}/lib/python${_houdini_python_version}/Lib/site-packages\\;"
+        "${RFHTREE}/${_houdini_python_version}/${RFH_HOUDINI_VERS}/python${_houdini_python_version}libs")
+else()
+    STRING(CONCAT PYTHONPATH
         "${RMANTREE}/bin:"
-        "${RMANTREE}/lib/python${_houdini_python_version}/site-packages")
+        "${RMANTREE}/lib/python${_houdini_python_version}/site-packages:"
+        "${RFHTREE}/${_houdini_python_version}/${RFH_HOUDINI_VERS}/python${_houdini_python_version}libs")
 endif()
 
 # create HDA
 add_custom_command(
     COMMAND  ${CMAKE_COMMAND} -E env
-        HOUDINI_PACKAGE_DIR=${RFHTREE}/packages
-        PYTHONPATH=${PYTHONPATH}
+        PYTHONPATH="${PYTHONPATH}"
         ${HFS}/bin/hython
         ${PROJECT_SOURCE_DIR}/python/build_hda.py
         hGeoPatterns.hda
