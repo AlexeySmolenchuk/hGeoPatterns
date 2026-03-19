@@ -16,6 +16,7 @@ else()
     SET(HFS "/opt/hfs20.5.445" CACHE PATH "Houdini Installation Folder")
     SET(RMANTREE "/opt/pixar/RenderManProServer-26.3" CACHE PATH "RendermanProServer Installation Folder")
     SET(RFHTREE "/opt/pixar/RenderManForHoudini-26.3" CACHE PATH "RendermanForHoudini Installation Folder")
+    SET(RFH_HOUDINI_VERS "20.5.445" CACHE STRING "RendermanForHoudini build")
 endif()
 
 # prevent attempt to build right in the project
@@ -33,10 +34,18 @@ file (GLOB args_files "rixplugins/Args/*.args")
 add_subdirectory(src)
 add_subdirectory(osl)
 
+if (NOT MSVC)
+    STRING(CONCAT PYTHONPATH
+        "${RFHTREE}/${_houdini_python_version}/${RFH_HOUDINI_VERS}/python${_houdini_python_version}libs:"
+        "${RMANTREE}/bin:"
+        "${RMANTREE}/lib/python${_houdini_python_version}/site-packages")
+endif()
+
 # create HDA
 add_custom_command(
     COMMAND  ${CMAKE_COMMAND} -E env
         HOUDINI_PACKAGE_DIR=${RFHTREE}/packages
+        PYTHONPATH=${PYTHONPATH}
         ${HFS}/bin/hython
         ${PROJECT_SOURCE_DIR}/python/build_hda.py
         hGeoPatterns.hda

@@ -27,14 +27,6 @@ endforeach ()
 
 add_custom_target(RIXPLUGINS DEPENDS ${rixplugin_names})
 
-if (MSVC)
-    #Prevent installation .lib files
-    install(TARGETS ${rixplugin_names}
-            RUNTIME COMPONENT Runtime
-            DESTINATION rixplugins)
-else()
-    install(TARGETS ${rixplugin_names}
-            DESTINATION rixplugins)
-endif()
-
-
+install(TARGETS ${rixplugin_names}
+        RUNTIME COMPONENT Runtime
+        DESTINATION rixplugins)
