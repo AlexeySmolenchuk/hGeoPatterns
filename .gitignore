@@ -12,3 +12,5 @@ build
 
 .clang-*
 .cache
+
+hGeoPatterns*.*/
