@@ -37,11 +37,24 @@ shader generateCoords
         ]],
     float frequency = 1,
     float jitter = 0.5,
+    int applyScale = 0  [[
+        string widget = "mapper",
+        string options = "relative:0|absolute:1",
+        int connectable = 0,
+        ]],
     float scale = 1,
     float scaleRandom = 0,
     float angle = 0,
+    int constrain = 0  [[
+        string widget = "popup",
+        string options = "180|120|90|60|45|30|0",
+        int editable = 1,
+        int min = 0,
+        int max = 180,
+        int connectable = 0,
+        ]],
     float rotationRandom = 1,
-    int seed = 0,
+    float seed = 0,
     float sharpness = 0.5  [[
         string label = "Sharpness",
         string conditionalVisPath="../mode",
@@ -61,7 +74,7 @@ shader generateCoords
         string label = "Distribution Texture",
         string options = "texture",
         DISTRIBUTION_TEXTURE_CONDITIONALS
-        int connectable = 0,
+        int connectable = 1,
         ]],
     float l = 0  [[
         string label = "Clamp Min",
@@ -211,17 +224,29 @@ shader generateCoords
                 continue;
         }
 
-        float rotation = angle + (rand.y - 0.5) * rotationRandom;
+        float rotation;
+        if (constrain>0)
+        {
+            float constrainInv = 360.0 / constrain;
+            float tmp = rand.y * constrainInv;
+            float newr = tmp-floor(tmp);
+            rotation = angle + (floor(tmp) + (newr-0.5) * rotationRandom) / constrainInv;
+        }
+        else
+            rotation = angle + (rand.y - 0.5) * rotationRandom;
+
         rotation *= 2 * M_PI;
 
         vector temp = hashnoise(rand);
         vector jitterDirection = {temp.x - 0.5, temp.y - 0.5, 0};
         float randomizedScale = mix(scale/(1 + scaleRandom*0.5), scale*(1 + scaleRandom*0.5) , temp.z);
+        if (applyScale)
+            randomizedScale *= frequency;
 
         if (hexagonal)
         {
             // Squash random value
-            jitterDirection.y *= 2/sqrt(3.0);
+            jitterDirection.y *= 2 / sqrt(3.0);
             jitterDirection.x += 0.5 * jitterDirection.y;
         }
 
@@ -242,8 +267,6 @@ shader generateCoords
                               sin(rotation)*current.x + cos(rotation)*current.y, 0);
 
         outCoords[i] = current + 0.5;
-        // TODO Maybe separate parameter for random offset within cell?
-        outCoords[i] += jitterDirection * jitter * 2;
 
         float w = 1.0;
 
@@ -259,6 +282,9 @@ shader generateCoords
         }
         else
         {
+            // // TODO Maybe separate parameter for random offset within cell?
+            outCoords[i] += jitterDirection * jitter * 2;
+
             float dist = length(current);
             distances[i] = dist;
 
