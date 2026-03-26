@@ -149,7 +149,13 @@ shader displacementLayer(
     if (isconnected(inLayer) && (mode==1))  // Use incoming Normal only in Chain mode
         localN = inLayer.QN;
     else{
-        getattribute("builtin", "Non", localN);
+        int reyesGrid = 0;
+        getattribute("context", "reyesGrid", reyesGrid);
+        if (reyesGrid)
+            localN = N;
+        else
+            getattribute("builtin", "Non", localN);
+        
         localN = transform("object", localN);
     }
 
