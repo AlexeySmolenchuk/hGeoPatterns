@@ -21,6 +21,19 @@ struct Manifold{
     string conditionalVisOp="and", \
     string conditionalVisRight="conditionalVis2",
 
+#define DISTRIBUTION_NOISE_CONDITIONALS \
+    string conditionalVis1Path="../useDistributionNoise", \
+    string conditionalVis1Op="equalTo", \
+    string conditionalVis1Value="1", \
+    \
+    string conditionalVis2Path="../mode", \
+    string conditionalVis2Op="equalTo", \
+    string conditionalVis2Value="1", \
+    \
+    string conditionalVisLeft="conditionalVis1", \
+    string conditionalVisOp="and", \
+    string conditionalVisRight="conditionalVis2",
+
 
 shader generateCoords
 (
@@ -76,6 +89,13 @@ shader generateCoords
         DISTRIBUTION_TEXTURE_CONDITIONALS
         int connectable = 1,
         ]],
+    int channel = 0  [[
+        string widget = "mapper",
+        string label = "Texture Channel",
+        string options = "R:0|G:1|B:2|Luminance:3",
+        DISTRIBUTION_TEXTURE_CONDITIONALS
+        int connectable = 0,
+        ]],
     float l = 0  [[
         string label = "Clamp Min",
         DISTRIBUTION_TEXTURE_CONDITIONALS
@@ -91,12 +111,45 @@ shader generateCoords
         DISTRIBUTION_TEXTURE_CONDITIONALS
         int connectable = 0,
         ]],
+    int useDistributionNoise = 0  [[
+        string widget = "checkBox",
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="1",
+        int connectable = 0,
+        ]],
+    vector noiseFrequency = 1  [[
+        string label = "Noise Frequency",
+        DISTRIBUTION_NOISE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    vector noiseOffset = 0  [[
+        string label = "Noise Offset",
+        DISTRIBUTION_NOISE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float ln = 0  [[
+        string label = "Clamp Min",
+        DISTRIBUTION_NOISE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float hn = 1  [[
+        string label = "Clamp Max",
+        DISTRIBUTION_NOISE_CONDITIONALS
+        int connectable = 0,
+        ]],
+    float en = 1  [[
+        string label = "Exponent",
+        DISTRIBUTION_NOISE_CONDITIONALS
+        int connectable = 0,
+        ]],
     Manifold textureManifold = {0},
 
     output vector outCoords[CAPACITY] = {0},
     output vector outHashes[CAPACITY] = {0},
     output float outWeights[CAPACITY] = {0},
     output color DBG = 0,
+    output color distribution = 0,
 )
 {
     int hexagonal = grid;
@@ -216,14 +269,35 @@ shader generateCoords
             y *= sqrt(3)*0.5;
         }
 
+        float my_distribution = 1;
         if (mode==SPLAT && useDistributionTexture && distributionTexture != "")
         {
-            float probability = luminance(texture(distributionTexture, x, y));
+            float probability;
+            if (channel<3)
+                probability = texture(distributionTexture, x, y, "firstchannel", channel);
+            else
+                probability = luminance(color(texture(distributionTexture, x, y)));
+
             probability = pow(linearstep(l, h, probability), e);
+            my_distribution *= probability;
+
             if ( rand.z > probability)
                 continue;
         }
 
+        if (mode==SPLAT && useDistributionNoise)
+        {
+            float probability = noise(vector(x,y,0)*noiseFrequency + noiseOffset);
+
+            probability = pow(linearstep(ln, hn, probability), en);
+            my_distribution *= probability;
+            
+            if ( rand.z > probability)
+                continue;
+        }
+
+        distribution += my_distribution;
+        
         float rotation;
         if (constrain>0)
         {
@@ -293,6 +367,8 @@ shader generateCoords
 
         }
     }
+
+    distribution /= num_evaluations;
 
     if (mode==SPLAT)
         return;
