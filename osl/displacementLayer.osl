@@ -91,7 +91,7 @@ shader displacementLayer(
     ]],
     int source = 0  [[
         string widget = "mapper",
-        string options = "Scalar R:0|Scalar G:1|Scalar B:2|ZBrush:3|Mudbox:4|Object:5",
+        string options = "Scalar R:0|Scalar G:1|Scalar B:2|Vector ZBrush:3|Vector Mudbox:4|Vector Object:5",
         int connectable = 0,
     ]],
     int mode = 0  [[
