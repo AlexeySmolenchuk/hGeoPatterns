@@ -270,6 +270,7 @@ shader generateCoords
         }
 
         float my_distribution = 1;
+        int skip = 0;
         if (mode==SPLAT && useDistributionTexture && distributionTexture != "")
         {
             float probability;
@@ -282,7 +283,7 @@ shader generateCoords
             my_distribution *= probability;
 
             if ( rand.z > probability)
-                continue;
+                skip = 1;
         }
 
         if (mode==SPLAT && useDistributionNoise)
@@ -293,10 +294,12 @@ shader generateCoords
             my_distribution *= probability;
             
             if ( rand.z > probability)
-                continue;
+                skip = 1;
         }
 
         distribution += my_distribution;
+        if (skip)
+            continue;
         
         float rotation;
         if (constrain>0)
