@@ -75,7 +75,12 @@ shader generateCoords
         string conditionalVisValue="0",
         int connectable = 0,
         ]],
-    float randomCulling = 0,
+    float randomCulling = 0  [[
+        string conditionalVisPath="../mode",
+        string conditionalVisOp="equalTo",
+        string conditionalVisValue="1",
+        int connectable = 0,
+        ]],
     int useDistributionTexture = 0  [[
         string widget = "checkBox",
         string conditionalVisPath="../mode",
