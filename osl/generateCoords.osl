@@ -75,6 +75,7 @@ shader generateCoords
         string conditionalVisValue="0",
         int connectable = 0,
         ]],
+    float randomCulling = 0,
     int useDistributionTexture = 0  [[
         string widget = "checkBox",
         string conditionalVisPath="../mode",
@@ -167,7 +168,43 @@ shader generateCoords
 
         // st - is user defined texture coordinates
         getattribute("primvar", "st", _uv);
-        uv = vector(_uv[0], 1 - _uv[1], 0);
+        uv = vector(_uv[0], 1 - _uv[1] + floor(_uv[1]) * 2, 0);
+    }
+    // Store integer part of uvcoords to sample distribution map from the same UDIM
+    float floorU = floor(uv[0]);
+    float floorV = floor(uv[1]);
+
+    // Visualize direct values from distribution texture for debug purpose
+    if (isconnected(distribution) && mode==SPLAT)
+    {
+        distribution = 1.0;
+        if (useDistributionTexture)
+        {
+            float probability = 0.0;
+            if (channel<3)
+                probability = texture(distributionTexture, uv[0], uv[1], "firstchannel", channel);
+            else
+                probability = luminance(color(texture(distributionTexture, uv[0], uv[1])));
+
+            if (l < h)
+                probability = pow(linearstep(l, h, probability), e);
+            else
+                probability = pow(1.0 - linearstep(h, l, probability), e);
+
+            distribution *= probability;
+        }
+
+        if (useDistributionNoise)
+        {
+            float probability = noise(vector(uv[0], uv[1], 0) * noiseFrequency + noiseOffset);
+
+            if (ln < hn)
+                probability = pow(linearstep(ln, hn, probability), en);
+            else
+                probability = pow(1.0 - linearstep(hn, ln, probability), en);
+
+            distribution *= probability;
+        }
     }
 
     uv *= vector(frequency, frequency, 0);
@@ -269,45 +306,51 @@ shader generateCoords
             y *= sqrt(3)*0.5;
         }
 
-        float my_distribution = 1;
-        int skip = 0;
-        if (mode==SPLAT && useDistributionTexture && distributionTexture != "")
+        if (mode==SPLAT && rand.z < randomCulling)
+            continue;
+        
+        if (mode==SPLAT && useDistributionTexture)
         {
-            float probability;
-            if (channel<3)
-                probability = texture(distributionTexture, x, y, "firstchannel", channel);
-            else
-                probability = luminance(color(texture(distributionTexture, x, y)));
+            float probability = 0.0;
+            float threshold = 0.0001;
+            float clampedX = max(floorU + threshold, min(floorU + 1.0 - threshold, x));
+            float clampedY = max(floorV + threshold, min(floorV + 1.0 - threshold, y));
 
-            probability = pow(linearstep(l, h, probability), e);
-            my_distribution *= probability;
+            // TODO: add texture filtering based on frequency.
+            if (channel<3)
+                probability = texture(distributionTexture, clampedX, clampedY, "firstchannel", channel);
+            else
+                probability = luminance(color(texture(distributionTexture, clampedX, clampedY)));
+
+            if (l < h)
+                probability = pow(linearstep(l, h, probability), e);
+            else
+                probability = pow(1.0 - linearstep(h, l, probability), e);
 
             if ( rand.z > probability)
-                skip = 1;
+                continue;
         }
 
         if (mode==SPLAT && useDistributionNoise)
         {
-            float probability = noise(vector(x,y,0)*noiseFrequency + noiseOffset);
+            float probability = noise(vector(x, y, 0)*noiseFrequency + noiseOffset);
 
-            probability = pow(linearstep(ln, hn, probability), en);
-            my_distribution *= probability;
+            if (ln < hn)
+                probability = pow(linearstep(ln, hn, probability), en);
+            else
+                probability = pow(1.0 - linearstep(hn, ln, probability), en);
             
             if ( rand.z > probability)
-                skip = 1;
+                continue;
         }
 
-        distribution += my_distribution;
-        if (skip)
-            continue;
-        
         float rotation;
         if (constrain>0)
         {
             float constrainInv = 360.0 / constrain;
             float tmp = rand.y * constrainInv;
             float newr = tmp-floor(tmp);
-            rotation = angle + (floor(tmp) + (newr-0.5) * rotationRandom) / constrainInv;
+            rotation = angle + (floor(tmp) + (newr - 0.5) * rotationRandom) / constrainInv;
         }
         else
             rotation = angle + (rand.y - 0.5) * rotationRandom;
@@ -370,8 +413,6 @@ shader generateCoords
 
         }
     }
-
-    distribution /= num_evaluations;
 
     if (mode==SPLAT)
         return;
