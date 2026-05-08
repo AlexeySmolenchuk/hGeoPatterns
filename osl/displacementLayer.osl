@@ -242,19 +242,11 @@ shader displacementLayer(
     }
 
     dispVector = localP - Po;
-    if (isconnected(displacedN) || isconnected(displacedNG) || isconnected(outLayer)){
+    if (isconnected(displacedN) || isconnected(displacedNG) || isconnected(outLayer))
         displacedN = calculatenormal(localP);
-
-        // Match Pixar implementation
-        float k = dot(N, displacedN);
-        displacedNG = (k * N - displacedN) / max(1.0e-8, abs(k));
-    }
 
     outLayer.Q = localP;
     outLayer.QN = displacedN;
-
-    if (!isconnected(displacedN))
-        return;
 
     displacedN = transform("object", "common", displacedN);
 
@@ -264,6 +256,13 @@ shader displacementLayer(
     getattribute("builtin", "Non", Non);
     getattribute("builtin", "Naon", Naon);
     displacedN = normalize(displacedN) + normalize(Non) - normalize(Naon);
+
+    if (isconnected(displacedNG))
+    {
+        // Match Pixar implementation
+        float k = dot(N, displacedN);
+        displacedNG = (k * N - displacedN) / max(1.0e-8, abs(k));
+    }
 
     // The trick to make restored normals consistent
     // TODO: check refraction usecase
