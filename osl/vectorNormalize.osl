@@ -1,0 +1,8 @@
+shader vectorNormalize
+(
+    vector in = 0,
+    output vector out = 0
+)
+{
+    out = normalize(in);
+}

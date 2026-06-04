@@ -1,0 +1,60 @@
+/*
+"common"
+    The coordinate system that all spatial values start out in and the one in which all lighting calculations are carried out. Note that the choice of "common" space may be different on each renderer.
+
+"object"
+    The local coordinate system of the graphics primitive (sphere, patch, etc.) that we are shading.
+
+"shader"
+    The local coordinate system active at the time that the shader was instanced.
+
+"world"
+    The world coordinate system designated in the scene.
+
+"camera"
+    The coordinate system with its origin at the center of the camera lens, -axis pointing right, -axis pointing up, and -axis pointing into the screen.
+
+"screen"
+    The coordinate system of the camera’s image plane (after perspective transformation, if any). Coordinate (0,0) of "screen" space is looking along the -axis of “camera” space.
+
+"raster"
+    2D pixel coordinates, with (0,0) as the upper-left corner of the image and (xres, yres) as the lower-right corner.
+
+"NDC"
+    2D Normalized Device Coordinates — like raster space, but normalized so that and both run from 0 to 1 across the whole image, with (0,0) being at the upper left of the image, and (1,1) being at the lower right.
+*/
+
+shader vectorTransform
+(
+    string transformAs = "vector"  [[
+        string widget = "popup",
+        string options = "vector|normal|point",
+        int connectable = 0
+        ]],
+    string fromSpace = "current"  [[
+        string widget = "popup",
+        string options = "common|object|shader|world|camera|screen|raster|NDC"
+        ]],
+    string toSpace = "object"  [[
+        string widget = "popup",
+        string options = "common|object|shader|world|camera|screen|raster|NDC"
+        ]],
+    vector in = 0,
+    output vector out = 0
+)
+{
+    if (transformAs=="vector")
+    {
+        out = transform(fromSpace, toSpace, in);
+    }
+    else if(transformAs=="normal")
+    {
+        normal temp = in;
+        out = transform(fromSpace, toSpace, temp);
+    }
+    else if(transformAs=="point")
+    {
+        point temp = in;
+        out = transform(fromSpace, toSpace, temp);
+    }
+}

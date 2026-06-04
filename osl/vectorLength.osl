@@ -1,0 +1,8 @@
+shader vectorLength
+(
+    vector in = 0,
+    output float out = 0
+)
+{
+    out = length(in);
+}
