@@ -1,28 +1,21 @@
-/*
-"common"
-    The coordinate system that all spatial values start out in and the one in which all lighting calculations are carried out. Note that the choice of "common" space may be different on each renderer.
+#define HELP_STRING "<br>" \
+"current/common<br>" \
+"   The coordinate system that all spatial values start out in and the one in which all lighting calculations are carried out. Note that the choice of 'common' space may be different on each renderer.<br><br>" \
+"object<br>" \
+"   The local coordinate system of the graphics primitive (sphere, patch, etc.) that we are shading.<br><br>" \
+"shader<br>" \
+"   The local coordinate system active at the time that the shader was instanced.<br><br>" \
+"world<br>" \
+"   The world coordinate system designated in the scene.<br><br>" \
+"camera<br>" \
+"   The coordinate system with its origin at the center of the camera lens, -axis pointing right, -axis pointing up, and -axis pointing into the screen.<br><br>" \
+"screen<br>" \
+"   The coordinate system of the camera’s image plane (after perspective transformation, if any). Coordinate (0,0) of 'screen' space is looking along the -axis of “camera” space.<br><br>" \
+"raster<br>" \
+"   2D pixel coordinates, with (0,0) as the upper-left corner of the image and (xres, yres) as the lower-right corner.<br><br>" \
+"NDC<br>" \
+"   2D Normalized Device Coordinates — like raster space, but normalized so that and both run from 0 to 1 across the whole image, with (0,0) being at the upper left of the image, and (1,1) being at the lower right."
 
-"object"
-    The local coordinate system of the graphics primitive (sphere, patch, etc.) that we are shading.
-
-"shader"
-    The local coordinate system active at the time that the shader was instanced.
-
-"world"
-    The world coordinate system designated in the scene.
-
-"camera"
-    The coordinate system with its origin at the center of the camera lens, -axis pointing right, -axis pointing up, and -axis pointing into the screen.
-
-"screen"
-    The coordinate system of the camera’s image plane (after perspective transformation, if any). Coordinate (0,0) of "screen" space is looking along the -axis of “camera” space.
-
-"raster"
-    2D pixel coordinates, with (0,0) as the upper-left corner of the image and (xres, yres) as the lower-right corner.
-
-"NDC"
-    2D Normalized Device Coordinates — like raster space, but normalized so that and both run from 0 to 1 across the whole image, with (0,0) being at the upper left of the image, and (1,1) being at the lower right.
-*/
 
 shader vectorTransform
 (
@@ -33,11 +26,15 @@ shader vectorTransform
         ]],
     string fromSpace = "current"  [[
         string widget = "popup",
-        string options = "common|object|shader|world|camera|screen|raster|NDC"
+        string options = "current|common|object|shader|world|camera|screen|raster|NDC",
+        int editable = 1,
+        string help = HELP_STRING,
         ]],
     string toSpace = "object"  [[
         string widget = "popup",
-        string options = "common|object|shader|world|camera|screen|raster|NDC"
+        string options = "current|common|object|shader|world|camera|screen|raster|NDC",
+        int editable = 1,
+        string help = HELP_STRING,
         ]],
     vector in = 0,
     output vector out = 0
